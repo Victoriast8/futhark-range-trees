@@ -1,8 +1,7 @@
-EXE = AM
+EXE = AM trees
 
-default:
-	futhark c $(EXE:=.fut) 
-# futhark compilation in this way only works on one input anyway
+%: %.fut
+	futhark c $<
 
 clean:
-	rm $(EXE) $(EXE:=.c)
+	rm -f $(EXE) $(EXE:=.c)
