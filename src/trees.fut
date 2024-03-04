@@ -1,10 +1,42 @@
---- This somewhat serves as an example and a predecessor to the actual Augmented Maps
+
+-- abstractions can come later
+-- module type node = {
+--     type K
+-- }
+
+
 module type tree = {
     type K
-    val empty: 
-    val insert:
-    val delete:
-    val find:
-    val first:
+    type~ M = []K
 
+    -- Simple operations
+    val empty: M
+    val size: M -> i64
+    val insert: M -> K -> M
+    val delete: M -> K -> M
+    val find: M -> K -> 
+    val first:
+    val last:
+    val previous:
+    val next:
+    val rank:
+    val select: 
+    val upTo:
+    val downTo:
+
+    -- Bulk operations
+    val join: M -> M -> M
+    val union: M -> M -> M
+    val intersect: M -> M -> M
+    val difference: M -> M -> M
+    val mapReduce:
+    val filter:
+    val range:
+    val split:
+    val join2: -- ??
+    val build:
 }
+
+-- module interval_tree : tree = {
+
+-- }
