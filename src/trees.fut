@@ -7,12 +7,13 @@
 
 module type tree = {
     type K
-    type~ M = []K
+    type V
+    type~ M = [](K, V)
 
     -- Simple operations
     val empty: M
     val size: M -> i64
-    val insert: M -> K -> M
+    val insert: M -> K -> V -> M
     val delete: M -> K -> M
     val find: M -> K -> 
     val first:
@@ -29,13 +30,14 @@ module type tree = {
     val union: M -> M -> M
     val intersect: M -> M -> M
     val difference: M -> M -> M
-    val mapReduce:
+    val mapReduce: (K -> B) 
     val filter:
     val range:
     val split:
     val join2: -- ??
     val build:
 }
+
 
 -- module interval_tree : tree = {
 
