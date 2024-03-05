@@ -48,5 +48,5 @@ module interval_tree : tree = {
 
     def size (t: M) : i64 = length M
 
-    def insert M -> K -> V -> (V -> V -> V) -> M
+    def insert (t: M) (k: K) -> (v: V) -> (V -> V -> V) -> M
 }
