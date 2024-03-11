@@ -1,6 +1,5 @@
 import "trees"
 
--- interface
 module type AM = {
     type K
     type V
@@ -19,8 +18,3 @@ module type AM = {
     val augFilter: (A -> bool) -> M -> M
     val augProject: (A -> B) -> (B -> B -> B) -> M -> K -> K -> B
 }
-
--- 
--- module itree: AM with K = i64 = {
-    
--- }
