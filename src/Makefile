@@ -1,4 +1,4 @@
-EXE = AM trees
+EXE = AM trees dict
 
 %: %.fut
 	futhark c $<
