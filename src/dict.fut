@@ -27,23 +27,20 @@ module arraydict : dict = {
             else (x, i)
         in (reduce_comm op (false, -1) (zip (map p as) (iota n))).1
     
+    -- sorting and comparing neighbors may be more efficient
+    -- question for troels - how does this relate to an optimal solution? Am I way off?
+    def remove_dup 'v (d : dict v) : dict v =
+        let n = length d
+        let dflg = map (\i  -> if i == n-1 then false else any (\x -> x.0 == d[i].0) d[i+1:n]) (iota n)
+        in (zip dflg (d :> [n](key, v)) |> filter (\(flg,_) -> not flg) |> unzip).1
+
     def many [n] 'v (ns : [n]key) (ts : [n]v) : dict v =
         let zs = map2 (\n t -> (n,t)) ns ts
         in remove_dup zs
 
     def single 'v (n : key) (t : v) : dict v =
         [(n, t)]
-
-    -- sorting and comparing neighbors may be more efficient
-    -- find a more stable way to remove duplicates
-    def remove_dup 'v (d : dict v) : dict v =
-        let n = length d
-        let dflg = map (\i  -> if i == n-1 then false else any (\x -> x == d[i]) d[i+1:n]) (iota n)
-        in (zip dflg d |> filter (\(i,_) -> i) |> unzip).1
-        -- let n = length d
-        -- let bs = tabulate_2d n n (\i j -> if i <= j then false else xs[i] == xs[j]) |> map (reduce (||) false)
-        -- in (zip (iota n) xs |> filter (\(i,_) -> not bs[i]) |> unzip).1
-
+    
     def union 'v (d : dict v) (d' : dict v) : dict v =
         let new = d ++ d'
         in remove_dup new
@@ -58,8 +55,12 @@ module arraydict : dict = {
 
 -- }
 
--- tænk over at lave bedre arraydict, hvor dictionarien er sorteret.
+
 def test_arraydict =
     let arrd = arraydict.single 0 true
     let look = arraydict.lookup 1 arrd
     in look
+
+def test_duplicate_keys =
+    arraydict.many [1,1,1,1] [true,true,false,false]
+
