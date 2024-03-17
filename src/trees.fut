@@ -1,4 +1,9 @@
 
+-- abstractions can come later
+-- module type node = {
+--     type K
+-- }
+
 
 module type tree = {
     type K
@@ -41,16 +46,8 @@ module interval_tree : tree = {
 
     def empty : M = [](K, V)
 
-    def size (t: M) : i64 = length M -- Perhaps do not count "dead" nodes?
-                                     -- ... Do not count leaves ...
+    def size (t: M) : i64 = length M
 
     def insert (t: M) (k: K) (v: V) (f: V -> V -> V) : M =
-        if M == empty 
-            then [(k, v)]
-            else let (L, k', v', R) = t 
-
-    def delete
-
-    def join (t1: M) (t2: M) : M =
-
+        
 }
