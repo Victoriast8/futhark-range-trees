@@ -88,13 +88,3 @@ module sorteddict : dict = {
         let bs = binary_search (<=) (unzip d).0 n
         in if length d > 0 && d[bs].0 == n then #some d[bs].1 else #none
 }
-
-
-def test_arraydict =
-    let arrd = arraydict.single 0 true
-    let look = arraydict.lookup 1 arrd
-    in look
-
-def test_duplicate_keys =
-    arraydict.many [1,1,1,1] [true,true,false,false]
-
