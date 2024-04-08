@@ -50,6 +50,8 @@ entry sorteddict_map [n] (keys : [n]i32) (values : [n]i32) : sorteddict.dict boo
 -- entry: sorteddict_reduce
 -- input { [1,2,3,4] [1,1,1,1] }
 -- output { 4i32 }
+-- input { [1,2,3,4] [1,2,3,4] }
+-- output { 10i32 }
 entry sorteddict_reduce [n] (keys : [n]i32) (values : [n]i32) : i32 =
     let d = sorteddict.many keys values
     in sorteddict.reduce (+) 0 d

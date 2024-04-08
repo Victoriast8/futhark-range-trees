@@ -20,18 +20,16 @@ module sorteddict : dict = {
     local def sort 'v (d : dict v) : dict v =
         merge_sort_by_key (\i -> i.0) (i32.<=) d
 
+    -- if we sort before removing duplicates, we can remove duplicates by checking neighbors 
+    local def nub_sorted 'v (d : dict v) : dict v =
+        (zip3 (indices d) d (rotate (-1) d)
+        |> filter (\(i,x,y) -> i == 0 || x.0 > y.0) |> unzip3).1
+
     def map 'a 'b (f: a -> b) (d : dict a) : dict b =
         map (\(k, v) -> (k, (f v))) d
 
     def reduce 'a (f : a -> a -> a) (ne : a) (d : dict a) : a =
         (unzip d).1 |> reduce f ne
-
-    -- if we sort before removing duplicates, we can remove duplicates by checking neighbors 
-    def nub_sorted 'v (d : dict v) : dict v =
-        if (head d).0 != (last d).0 then
-            let dflg = map2 (\(x,_) (y,_) -> x == y) d (rotate (-1) d)
-            in (zip dflg d |> filter (\(flg,_) -> not flg) |> unzip).1
-        else take 1 d
 
     def many [n] 'v (ns : [n]key) (ts : [n]v) : dict v =
         map2 (\n t -> (n,t)) ns ts |> sort |> nub_sorted
