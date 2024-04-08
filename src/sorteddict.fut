@@ -31,12 +31,14 @@ module sorteddict : dict = {
     def reduce 'a (f : a -> a -> a) (ne : a) (d : dict a) : a =
         (unzip d).1 |> reduce f ne
 
+    -- Also, this is a problem (may be a more efficient solution)
     def many [n] 'v (ns : [n]key) (ts : [n]v) : dict v =
         map2 (\n t -> (n,t)) ns ts |> sort |> nub_sorted
 
     def single 'v (n : key) (t : v) : dict v =
         [(n, t)]
     
+    -- Also, this is a problem (may be a more efficient solution)
     def union 'v (d : dict v) (d' : dict v) : dict v =
         d ++ d' |> sort |> nub_sorted
 
