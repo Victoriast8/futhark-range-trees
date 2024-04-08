@@ -1,7 +1,7 @@
 ## Interval Trees in Futhark
 This project is about implementing interval trees in futhark using PAMs (Parallel Augmented Maps).
 
-The project's original purpose is to seek an answer to the question: "Are PAMs suitable for data-parallel construction of interval trees?", however we may find another road along the way.
+The project's original purpose is to seek an answer to the question: "Are PAMs suited for data-parallel construction of interval trees?", however we may find another road along the way.
 
 ## What are PAMs?
 Here's an article about PAMs: https://dl.acm.org/doi/pdf/10.1145/3200691.3178509 \
