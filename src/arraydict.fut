@@ -24,6 +24,8 @@ module arraydict : dict = {
         let dflg = map (\i  -> if i == n-1 then false else any (\x -> x.0 == d[i].0) d[i+1:n]) (iota n)
         in (zip dflg (d :> [n](key, v)) |> filter (\(flg,_) -> not flg) |> unzip).1
 
+    
+
     def map 'a 'b (f: a -> b) (d : dict a) : dict b =
         map (\(k, v) -> (k, (f v))) d
 
@@ -45,7 +47,8 @@ module arraydict : dict = {
         in if m != -1 then #some d[m].1 else #none 
 }
 
--- module mk_arraydict (P:{type t val ==: t -> t -> bool}) =
+-- module mk_arraydict (P:{type t 
+--                         val == : t -> t -> bool}) =
 --  {type key = P.t
 --  }
 -- module m = mk_arraydict f32

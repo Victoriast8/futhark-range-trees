@@ -13,3 +13,36 @@ module type dict = {
     val union 'v : dict v -> dict v -> dict v
     val lookup 'v : key -> dict v -> opt v
 }
+
+-- module type tree_functions = {
+--     type K
+--     type V
+--     type~ M = [](K, V)
+
+--     -- Simple operations
+--     val empty: M
+--     val size: M -> i64
+--     val insert: M -> K -> V -> (V -> V -> V) -> M
+--     val delete: M -> K -> M
+--     val find: M -> K -> V
+--     val first: M -> V
+--     val last: M -> V
+--     -- val previous: -- ??
+--     -- val next: -- ??
+--     -- val rank: -- ??
+--     -- val select: -- ??
+--     val upTo: M -> K -> M
+--     val downTo: M -> K -> M
+
+--     -- Bulk operations
+--     val join: M -> M -> M
+--     val union: M -> M -> M
+--     val intersect: M -> M -> M
+--     val difference: M -> M -> M
+--     val mapReduce: (K -> V -> B) -> (B -> B -> B) -> B -> M -> B
+--     val filter: (K -> V -> bool) -> M -> M
+--     val range: M -> K -> K -> M
+--     -- val split: -- ??
+--     -- val join2: -- ??
+--     val build: [](K, V) -> (V -> V -> V) -> M
+-- }

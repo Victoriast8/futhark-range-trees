@@ -1,3 +1,4 @@
 *
-!.fut
+!*.fut
 !Makefile
+BST.fut
