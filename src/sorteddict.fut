@@ -25,22 +25,36 @@ module sorteddict : dict = {
         (zip3 (indices d) d (rotate (-1) d)
         |> filter (\(i,x,y) -> i == 0 || x.0 > y.0) |> unzip3).1
 
+    local def ilog2 (x: i64) = 63 - i64.i32 (i64.clz x)
+
+    def size 'v (d : dict v) : i64 =
+        length d
+
     def map 'a 'b (f: a -> b) (d : dict a) : dict b =
         map (\(k, v) -> (k, (f v))) d
 
     def reduce 'a (f : a -> a -> a) (ne : a) (d : dict a) : a =
         (unzip d).1 |> reduce f ne
 
-    -- Also, this is a problem (may be a more efficient solution)
+    -- Consider using insertion as the method of sorting.
+    -- Building should have nlgn work anyways 
     def many [n] 'v (ns : [n]key) (ts : [n]v) : dict v =
         map2 (\n t -> (n,t)) ns ts |> sort |> nub_sorted
 
     def single 'v (n : key) (t : v) : dict v =
         [(n, t)]
     
-    -- Also, this is a problem (may be a more efficient solution)
+    -- Consider using insertion as the method of sorting.
+    -- Building should have nlgn work anyways 
     def union 'v (d : dict v) (d' : dict v) : dict v =
-        d ++ d' |> sort |> nub_sorted
+        let dedup_time 'v (d1: dict v) (d2: dict v) : bool =
+            let (s1, s2) = (size d1, size d2)
+            in ilog2 s1 <= ilog2 (s1+s2) && ilog2 s2 <= ilog2 (s1+s2)
+        in if dedup_time d d' 
+        then 
+            (d ++ d' |> sort |> nub_sorted) 
+        else 
+            (d ++ d' |> sort)
 
     def lookup 'v (n : key) (d : dict v) : opt v =
         let bs = binary_search (<=) (unzip d).0 n

@@ -1,4 +1,4 @@
-EXE = arraydict sorteddict trees
+EXE = arraydict sorteddict
 TESTS = $(EXE:=_tests)
 COMP = $(EXE) $(TESTS)
 

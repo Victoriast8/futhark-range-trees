@@ -24,7 +24,10 @@ module arraydict : dict = {
         let dflg = map (\i  -> if i == n-1 then false else any (\x -> x.0 == d[i].0) d[i+1:n]) (iota n)
         in (zip dflg (d :> [n](key, v)) |> filter (\(flg,_) -> not flg) |> unzip).1
 
-    
+    def ilog2 (x: i64) = 63 - i64.i32 (i64.clz x)
+
+    def size 'v (d : dict v) : i64 =
+        length d
 
     def map 'a 'b (f: a -> b) (d : dict a) : dict b =
         map (\(k, v) -> (k, (f v))) d
@@ -32,19 +35,25 @@ module arraydict : dict = {
     def reduce 'a (f : a -> a -> a) (ne : a) (d : dict a) : a =
         (unzip d).1 |> reduce f ne
 
+    -- creates many values at one time. Always removes duplicates.
     def many [n] 'v (ns : [n]key) (ts : [n]v) : dict v =
-        nub (map2 (\n t -> (n,t)) ns ts)
+        map2 (\n t -> (n,t)) ns ts |> nub
 
     def single 'v (n : key) (t : v) : dict v =
         [(n, t)]
     
     def union 'v (d : dict v) (d' : dict v) : dict v =
-        nub (d ++ d')
+         -- decides if its time to dedup.
+         -- if the united array is a power of two or more bigger than both
+        let dedup_time 'v (d1: dict v) (d2: dict v) : bool =
+            let (s1, s2) = (size d1, size d2)
+            in ilog2 s1 <= ilog2 (s1+s2) && ilog2 s2 <= ilog2 (s1+s2)
+        in if dedup_time d d' then nub (d ++ d') else d ++ d'
 
     def lookup 'v (n : key) (d : dict v) : opt v =
         let p (x: key, y: v) : bool = x == n
         let m = find_index p d
-        in if m != -1 then #some d[m].1 else #none 
+        in if m != -1 then #some d[m].1 else #none
 }
 
 -- module mk_arraydict (P:{type t 
