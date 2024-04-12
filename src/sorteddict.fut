@@ -6,7 +6,7 @@ module sorteddict : dict = {
     type~ dict 'v = [](key, v)
 
     -- Stolen from: https://futhark-lang.org/examples/binary-search.html
-    -- TODO: analyze and do eytzinger_index
+    -- Eytzinger may be considered...
     local def binary_search [n] 't (lte: t -> t -> bool) (xs: [n]t) (x: t) : i64 =
         let (l, _) =
             loop (l, r) = (0, n-1) while l < r do
@@ -20,7 +20,7 @@ module sorteddict : dict = {
     local def sort 'v (d : dict v) : dict v =
         merge_sort_by_key (\i -> i.0) (i32.<=) d
 
-    -- if we sort before removing duplicates, we can remove duplicates by checking neighbors 
+    -- if we sort before removing duplicates, we can remove duplicates by checking neighbors
     local def nub_sorted 'v (d : dict v) : dict v =
         (zip3 (indices d) d (rotate (-1) d)
         |> filter (\(i,x,y) -> i == 0 || x.0 > y.0) |> unzip3).1
@@ -47,7 +47,7 @@ module sorteddict : dict = {
     -- Consider using insertion as the method of sorting.
     -- Building should have nlgn work anyways 
     def union 'v (d : dict v) (d' : dict v) : dict v =
-        let dedup_time 'v (d1: dict v) (d2: dict v) : bool =
+        let dedup_time (d1: dict v) (d2: dict v) : bool =
             let (s1, s2) = (size d1, size d2)
             in ilog2 s1 <= ilog2 (s1+s2) && ilog2 s2 <= ilog2 (s1+s2)
         in if dedup_time d d' 

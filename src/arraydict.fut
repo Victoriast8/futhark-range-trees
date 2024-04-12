@@ -1,4 +1,5 @@
 import "dict"
+import "../lib/github.com/diku-dk/sorts/merge_sort"
 
 -- A simple implementation of module type dict
 module arraydict : dict = {
@@ -15,16 +16,27 @@ module arraydict : dict = {
             else (x, i)
         in (reduce_comm op (false, -1) (zip (map p as) (iota n))).1
     
-    -- please note: The following is neither benchmarked nor asymptotically optimized. A naive approach.
-    -- sorting and comparing neighbors may be more efficient.
-    -- here are some other (perhaps somewhat similar) ways to remove duplicates: https://futhark-lang.org/examples/removing-duplicates.html
-    -- nub removes leading duplicates - could easily be changed to trailing duplicates.
+    ------
+    -- As a note for this deduping:
+    -- The Futhark documentation has a more efficient way of removing duplicates,
+    -- while keeping the order of elements intact, both in work and span.
+    -- We keep two versions for now, as the naive nub implementation is more readable.
+    ------
     local def nub 'v (d : dict v) : dict v =
         let n = length d
         let dflg = map (\i  -> if i == n-1 then false else any (\x -> x.0 == d[i].0) d[i+1:n]) (iota n)
         in (zip dflg (d :> [n](key, v)) |> filter (\(flg,_) -> not flg) |> unzip).1
 
-    def ilog2 (x: i64) = 63 - i64.i32 (i64.clz x)
+    -- Inefficient due to the double sorting, as explained in the docs: https://futhark-lang.org/examples/removing-duplicates.html
+    -- local def doc_nub 'v (d : dict v) : dict v =
+    --     let sorted = zip d (indices d)
+    --                  |> merge_sort_by_key (\i -> i.0.0) (i32.<=)
+    --     let (ds, is) = unzip sorted
+    --     let pack = zip4 (indices ds) ds (rotate (-1) ds) is
+    --                |> filter (\(i,x,y,_) -> i == 0 || x.0 > y.0)
+    --     in merge_sort_by_key (\i -> i.3) (i64.<=) pack |> map (.1)
+
+    local def ilog2 (x: i64) = 63 - i64.i32 (i64.clz x)
 
     def size 'v (d : dict v) : i64 =
         length d
@@ -45,7 +57,7 @@ module arraydict : dict = {
     def union 'v (d : dict v) (d' : dict v) : dict v =
          -- decides if its time to dedup.
          -- if the united array is a power of two or more bigger than both
-        let dedup_time 'v (d1: dict v) (d2: dict v) : bool =
+        let dedup_time (d1: dict v) (d2: dict v) : bool =
             let (s1, s2) = (size d1, size d2)
             in ilog2 s1 <= ilog2 (s1+s2) && ilog2 s2 <= ilog2 (s1+s2)
         in if dedup_time d d' then nub (d ++ d') else d ++ d'
