@@ -13,6 +13,8 @@ module type dict = {
     val single 'v : key -> v -> dict v
     val union 'v : dict v -> dict v -> dict v
     val lookup 'v : key -> dict v -> opt v
+    val delete 'v : dict v -> key -> dict v
+    val 
 }
 
 -- module type tree_functions = {

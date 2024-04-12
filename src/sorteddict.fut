@@ -59,6 +59,10 @@ module sorteddict : dict = {
     def lookup 'v (n : key) (d : dict v) : opt v =
         let bs = binary_search (<=) (unzip d).0 n
         in if length d > 0 && d[bs].0 == n then #some d[bs].1 else #none
+
+    -- Filter is slow. Removing a single element is not easy...
+    def delete 'v (d : dict v) (k : key) : dict v =
+        filter (\(i,_) -> i != k) d
 }
 
 -- module mk_arraydict (P:{type t val ==: t -> t -> bool}) =

@@ -66,6 +66,12 @@ module arraydict : dict = {
         let p (x: key, y: v) : bool = x == n
         let m = find_index p d
         in if m != -1 then #some d[m].1 else #none
+
+    -- As this is unsorted, filtering mimics worst case runtime.
+    def delete 'v (d : dict v) (k : key) : dict v =
+        filter (\(i,_) -> i != k) d
+    
+
 }
 
 -- module mk_arraydict (P:{type t 
