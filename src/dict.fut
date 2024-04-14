@@ -3,18 +3,20 @@ type opt 'v = #some v
             | #none
 
 module type dict = {
-    type key = i32
+    type k = i32
     type~ dict 'v
 
     val size 'v : dict v -> i64
-    val map 'a 'b: (a -> b) -> dict a -> dict b
-    val reduce 'a: (a -> a -> a) -> a -> dict a -> a
-    val many [n] 'v : [n]key -> [n]v -> dict v
-    val single 'v : key -> v -> dict v
+    val d_map 'a 'b: (a -> b) -> dict a -> dict b
+    val d_reduce 'a: (a -> a -> a) -> a -> dict a -> a
+    val many [n] 'v : [n]k -> [n]v -> dict v
+    val single 'v : k -> v -> dict v
+    val insert 'v : k -> v -> dict v -> dict v
     val union 'v : dict v -> dict v -> dict v
-    val lookup 'v : key -> dict v -> opt v
-    val delete 'v : dict v -> key -> dict v
-    val 
+    val lookup 'v : k -> dict v -> opt v
+    val delete 'v : dict v -> k -> dict v
+    -- mapReduce is redundant, if d_map and d_reduce acts similarly in unison to the mapReduce
+    val mapReduce 'a 'b : (k -> a -> b) -> (b -> b -> b) -> b -> dict a -> b
 }
 
 -- module type tree_functions = {

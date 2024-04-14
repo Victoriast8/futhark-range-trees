@@ -2,11 +2,11 @@ import "dict"
 import "../lib/github.com/diku-dk/sorts/merge_sort"
 
 module sorteddict : dict = {
-    type key = i32
-    type~ dict 'v = [](key, v)
+    type k = i32
+    type~ dict 'v = [](k, v)
 
     -- Stolen from: https://futhark-lang.org/examples/binary-search.html
-    -- Eytzinger may be considered...
+    -- Eytzinger may be considered, for specific sizes
     local def binary_search [n] 't (lte: t -> t -> bool) (xs: [n]t) (x: t) : i64 =
         let (l, _) =
             loop (l, r) = (0, n-1) while l < r do
@@ -30,19 +30,26 @@ module sorteddict : dict = {
     def size 'v (d : dict v) : i64 =
         length d
 
-    def map 'a 'b (f: a -> b) (d : dict a) : dict b =
+    def d_map 'a 'b (f: a -> b) (d : dict a) : dict b =
         map (\(k, v) -> (k, (f v))) d
 
-    def reduce 'a (f : a -> a -> a) (ne : a) (d : dict a) : a =
+    def d_reduce 'a (f : a -> a -> a) (ne : a) (d : dict a) : a =
         (unzip d).1 |> reduce f ne
 
     -- Consider using insertion as the method of sorting.
     -- Building should have nlgn work anyways 
-    def many [n] 'v (ns : [n]key) (ts : [n]v) : dict v =
+    def many [n] 'v (ns : [n]k) (ts : [n]v) : dict v =
         map2 (\n t -> (n,t)) ns ts |> sort |> nub_sorted
 
-    def single 'v (n : key) (t : v) : dict v =
-        [(n, t)]
+    def single 'v (key : k) (value : v) : dict v =
+        [(key, value)]
+
+    def insert 'v (key : k) (value : v) (d : dict v) : dict v =
+        if size d == 0 then single k v -- if dict is empty, return single
+            else let i = binary_search (<=) (unzip d).0 key
+            in if (i+1) == size d && d[i].0 < key
+                then d ++ [(key,value)] -- if it is the biggest value
+                else d[:i] ++ [(key,value)] ++ d[i:] -- otherwise, insert before index i
     
     -- Consider using insertion as the method of sorting.
     -- Building should have nlgn work anyways 
@@ -50,23 +57,27 @@ module sorteddict : dict = {
         let dedup_time (d1: dict v) (d2: dict v) : bool =
             let (s1, s2) = (size d1, size d2)
             in ilog2 s1 <= ilog2 (s1+s2) && ilog2 s2 <= ilog2 (s1+s2)
-        in if dedup_time d d' 
-        then 
-            (d ++ d' |> sort |> nub_sorted) 
+        in if dedup_time d d'
+        then
+            (d ++ d' |> sort |> nub_sorted)
         else 
             (d ++ d' |> sort)
 
-    def lookup 'v (n : key) (d : dict v) : opt v =
+    def lookup 'v (n : k) (d : dict v) : opt v =
         let bs = binary_search (<=) (unzip d).0 n
         in if length d > 0 && d[bs].0 == n then #some d[bs].1 else #none
 
     -- Filter is slow. Removing a single element is not easy...
-    def delete 'v (d : dict v) (k : key) : dict v =
-        filter (\(i,_) -> i != k) d
+    def delete 'v (d : dict v) (key : k) : dict v =
+        filter (\(i,_) -> i != key) d
+    
+    def mapReduce 'a 'b (f : k -> a -> b) (g : b -> b -> b) 
+                        (ne : b) (d : dict a) : b =
+        reduce g ne (map (\(x,y) -> f x y) d)
 }
 
 -- module mk_arraydict (P:{type t val ==: t -> t -> bool}) =
---  {type key = P.t
+--  {type k = P.t
 --  }
 -- module m = mk_arraydict f32
 -- læs futhark bogen (specielt kapitel 4 om moduler)
