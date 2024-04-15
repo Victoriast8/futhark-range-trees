@@ -35,6 +35,9 @@ module sorteddict : dict = {
 
     def d_reduce 'a (f : a -> a -> a) (ne : a) (d : dict a) : a =
         (unzip d).1 |> reduce f ne
+    
+    def d_filter 'v (f: k -> v -> bool) (d : dict v) : dict v =
+        filter (\(x,y) -> f x y) d
 
     -- Consider using insertion as the method of sorting.
     -- Building should have nlgn work anyways 

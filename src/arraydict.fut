@@ -49,6 +49,9 @@ module arraydict : dict = {
 
     def d_reduce 'a (f : a -> a -> a) (ne : a) (d : dict a) : a =
         (unzip d).1 |> reduce f ne
+    
+    def d_filter 'v (f: k -> v -> bool) (d : dict v) : dict v =
+        filter (\(x,y) -> f x y) d
 
     -- creates many values at one time. Always removes duplicates.
     def many [n] 'v (ns : [n]k) (ts : [n]v) : dict v =
