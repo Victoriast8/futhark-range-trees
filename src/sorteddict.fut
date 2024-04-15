@@ -45,9 +45,10 @@ module sorteddict : dict = {
         [(key, value)]
 
     def insert 'v (key : k) (value : v) (d : dict v) : dict v =
-        if size d == 0 then single k v -- if dict is empty, return single
+        let s = size d
+        if s == 0 then single k v -- if dict is empty, return single
             else let i = binary_search (<=) (unzip d).0 key
-            in if (i+1) == size d && d[i].0 < key
+            in if (i+1) == s && d[i].0 < key
                 then d ++ [(key,value)] -- if it is the biggest value
                 else d[:i] ++ [(key,value)] ++ d[i:] -- otherwise, insert before index i
     
@@ -70,10 +71,6 @@ module sorteddict : dict = {
     -- Filter is slow. Removing a single element is not easy...
     def delete 'v (d : dict v) (key : k) : dict v =
         filter (\(i,_) -> i != key) d
-    
-    def mapReduce 'a 'b (f : k -> a -> b) (g : b -> b -> b) 
-                        (ne : b) (d : dict a) : b =
-        reduce g ne (map (\(x,y) -> f x y) d)
 }
 
 -- module mk_arraydict (P:{type t val ==: t -> t -> bool}) =

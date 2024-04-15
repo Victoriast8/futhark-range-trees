@@ -43,7 +43,7 @@ entry arraydict_union [n] (k1 : [n]i32) (k2 : [n]i32) : arraydict.dict bool =
 -- output { [1i32, 2i32, 3i32, 4i32] }
 entry arraydict_map [n] (keys : [n]i32) (values : [n]i32) : arraydict.dict bool =
     let d = arraydict.many keys values
-    in arraydict.map (bool.i32) d
+    in arraydict.d_map (bool.i32) d
 
 
 -- ==
@@ -52,4 +52,13 @@ entry arraydict_map [n] (keys : [n]i32) (values : [n]i32) : arraydict.dict bool 
 -- output { 4i32 }
 entry arraydict_reduce [n] (keys : [n]i32) (values : [n]i32) : i32 =
     let d = arraydict.many keys values
-    in arraydict.reduce (+) 0 d
+    in arraydict.d_reduce (+) 0 d
+
+
+-- ==
+-- entry: arraydict_delete
+-- input { [1,2,3,4] 2 }
+-- output { [1i32, 3i32, 4i32] }
+entry arraydict_delete [n] (keys : [n]i32) (rm : i32) : i32 =
+
+    

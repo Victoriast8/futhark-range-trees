@@ -15,8 +15,6 @@ module type dict = {
     val union 'v : dict v -> dict v -> dict v
     val lookup 'v : k -> dict v -> opt v
     val delete 'v : dict v -> k -> dict v
-    -- mapReduce is redundant, if d_map and d_reduce acts similarly in unison to the mapReduce
-    val mapReduce 'a 'b : (k -> a -> b) -> (b -> b -> b) -> b -> dict a -> b
 }
 
 -- module type tree_functions = {

@@ -18,9 +18,11 @@ module arraydict : dict = {
     
     ------
     -- As a note for this deduping:
-    -- The Futhark documentation has a more efficient way of removing duplicates,
-    -- while keeping the order of elements intact, both in work and span.
-    -- We keep two versions for now, as the naive nub implementation is more readable.
+    -- The Futhark documentation may have a more efficient way of removing duplicates,
+    -- while keeping the order of elements intact...
+    -- We keep two versions for now, as the naive nub implementation may have some merit.
+    -- ALSO: consider sorting and removing neighbors - preserving the order of elements
+    -- may also be ignored! We could consider the arraydict, to be the greedy or naive dict.
     ------
     local def nub 'v (d : dict v) : dict v =
         let n = length d
@@ -74,15 +76,6 @@ module arraydict : dict = {
     -- As this is unsorted, filtering mimics worst case runtime.
     def delete 'v (d : dict v) (key : k) : dict v =
         filter (\(i,_) -> i != key) d
-
-    -- Question for Troels: Is there some way to optimize this for the compiler?
-    -- In other words: Is there a better way to do this, than a simple reduce_comm -> map?
-    def mapReduce 'a 'b (f : k -> a -> b) (g : b -> b -> b) 
-                        (ne : b) (d : dict a) : b =
-        reduce g ne (map (\(x,y) -> f x y) d)
-        -- reduce_comm (\s (k,v) -> g s (f k v)) ne d
-        -- Why is the above not allowed? Does the compiler fuse the operations together on its own,
-        -- or is it just as optimized to map first then reduce? (Asymptotically, yes. In practice, maybe?)
 }
 
 -- module mk_arraydict (P:{type t 
