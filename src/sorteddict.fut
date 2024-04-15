@@ -46,7 +46,7 @@ module sorteddict : dict = {
 
     def insert 'v (key : k) (value : v) (d : dict v) : dict v =
         let s = size d
-        if s == 0 then single k v -- if dict is empty, return single
+        in if s == 0 then single key value -- if dict is empty, return single
             else let i = binary_search (<=) (unzip d).0 key
             in if (i+1) == s && d[i].0 < key
                 then d ++ [(key,value)] -- if it is the biggest value
