@@ -1,14 +1,14 @@
 import "dict"
-import "../lib/github.com/diku-dk/sorts/radix_sort"
+import "../lib/github.com/diku-dk/sorts/merge_sort"
 
 module type itree = {
     type interval
     type point
-    type tree
+    type~ tree
 
     -- count må gerne være sekventiel - vi kan kalde den med maps: parallelismen ligger i many
     val count : point -> tree -> i64 -- skal tælle hvor mange intervaller indeholder et punkt
-    val many : []interval -> tree
+    val many [n] : [n]interval -> tree
     -- ...
 }
 -- start med at skrive en rekursiv many
@@ -25,24 +25,41 @@ module itree1D : itree with interval = (f64, f64)
     -- out of bounds is not taken into account, but may later be discarded in a similar fashion to negative numbers if necessary.
     type~ tree = [](point,(i32,i32),[]interval,[]interval)
 
-    -- assumes 't' contains at least 1 element
-    def count : (p : point) (t : tree) : i64 =
+    local def sort_by_key [n] 't (key : t -> f64) (xs : [n]t) : [n]t =
+        merge_sort_by_key key (f64.<=) xs
+
+    def count (p : point) (t : tree) : i64 =
         if length t == 0 then 0 else
-            -- check p against point (first element)
-            -- then compare against sorted array in appropriate direction
-            -- then run on child in same direction
+            let (_,cnt) = loop (i,acc) = (0,0) while i > 0 do
+                let c = t[i]
+                in if !(p == c.0) then
+                    let dir = p < c.0
+                    -- 'h' below could probably be calculated with a loop instead, with less work (but a with a bigger span!)
+                    -- (due to these being sorted by interval startpoint/endpoint)
+                    -- with a map, you can actually avoid the whole sorting process and only keep track of single overlapping intervals
+                    let (h,new_i) = if dir then ((map (\(j,_) -> if p > j then 1 else 0) c.2), c.1.0) 
+                                           else ((map (\(_,j) -> if p < j then 1 else 0) c.3), c.1.1)
+                    let sum = reduce (+) 0 h
+                    in (new_i,(acc + sum))
+                else
+                    (-1, acc + (length c.2))
+            in cnt
     
     def many [n] (iv : [n]interval) : tree =
-        -- compute x_center
         let fsize = f64.i64 n
-        let avr_intvls (x,y) =
-            (x/(2.0*fsize)) + (y/(2.0*fsize))
-        let x_cent = reduce (+) 0.0 (map avr_intvls iv)
-        -- partition intervals
-        let (p1,p2,p3) = partition2 (\(x,_) -> x > x_cent) (\(_,y) -> x_cent > y) iv
-        -- run recursively on side intervals
-        let (s1,s2) = (sort_by_key (.0) p2, sort_by_key (.1) p2)
-        in (x_cent,(many p1, many p3),s1,s2)
+        
+
+    -- def recursive_many [n] (iv : [n]interval) : tree =
+    --     -- compute x_center
+    --     let fsize = f64.i64 n
+    --     let avg_intvls (x,y) =
+    --         (x/(2.0*fsize)) + (y/(2.0*fsize))
+    --     let x_cent = reduce (+) 0.0 (map avg_intvls iv)
+    --     -- partition intervals
+    --     let (p1,p2,p3) = partition2 (\(x,_) -> x > x_cent) (\(_,y) -> x_cent > y) iv
+    --     -- run recursively on side intervals
+    --     let (s1,s2) = (sort_by_key (.0) p2, sort_by_key (.1) p2)
+    --     in (x_cent,(many p1, many p3),s1,s2)
 }
 
 module itree2D : itree with interval = (f64, f64)
@@ -52,7 +69,7 @@ module itree2D : itree with interval = (f64, f64)
     type point = (f64)
     type~ tree = [](point,(i32,i32),interval,interval)
 
-    def count : (p : point) (t : tree) : i64 =
+    def count (p : point) (t : tree) : i64 =
         ??? 
     
     def many [n] (iv : [n]interval) : tree =
