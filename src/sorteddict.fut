@@ -18,7 +18,7 @@ module sorteddict : dict = {
     
     -- let's define a sort function that use some predefined sort
     local def sort 'v (d : dict v) : dict v =
-        merge_sort_by_key (\i -> i.0) (i32.<=) d
+        merge_sort_by_key (.0) (i32.<=) d
 
     -- if we sort before removing duplicates, we can remove duplicates by checking neighbors
     local def nub_sorted 'v (d : dict v) : dict v =

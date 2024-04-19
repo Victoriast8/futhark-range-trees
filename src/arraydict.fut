@@ -2,8 +2,8 @@ import "dict"
 import "../lib/github.com/diku-dk/sorts/merge_sort"
 
 -- A simple implementation of module type dict
-module arraydict : dict = {
-    type k = i32
+module mk_arraydict (P:{type t val == : t -> t -> bool}) : dict with k = P.t = {
+    type k = P.t
     type~ dict 'v = [](k, v)
 
     -- Stolen from Futhark examples: https://futhark-lang.org/examples/searching.html
@@ -26,7 +26,7 @@ module arraydict : dict = {
     ------
     local def nub 'v (d : dict v) : dict v =
         let n = length d
-        let dflg = map (\i  -> if i == n-1 then false else any (\x -> x.0 == d[i].0) d[i+1:n]) (iota n)
+        let dflg = map (\i  -> if i == n-1 then false else any (\x -> x.0 P.== d[i].0) d[i+1:n]) (iota n)
         in (zip dflg (d :> [n](k, v)) |> filter (\(flg,_) -> not flg) |> unzip).1
 
     -- Still somewhat inefficient due to the double sorting, as explained in the docs:
@@ -72,20 +72,14 @@ module arraydict : dict = {
         in if dedup_time d d' then nub (d ++ d') else d ++ d'
 
     def lookup 'v (n : k) (d : dict v) : opt v =
-        let p (x: k, y: v) : bool = x == n
+        let p (x: k, y: v) : bool = x P.== n
         let m = find_index p d
         in if m != -1 then #some d[m].1 else #none
 
     -- As this is unsorted, filtering mimics worst case runtime.
     def delete 'v (d : dict v) (key : k) : dict v =
-        filter (\(i,_) -> i != key) d
+        filter (\(i,_) -> !(i P.== key)) d
 }
 
--- module mk_arraydict (P:{type t 
---                         val == : t -> t -> bool}) =
---  {type k = P.t
---  }
+module arraydict = mk_arraydict i32
 -- module m = mk_arraydict f32
--- læs futhark bogen (specielt kapitel 4 om moduler)
--- parametricering af modul funktioner som ovenstående, kan bruges som yderligere abstraktion.
--- https://futhark-book.readthedocs.io/en/latest/modules.html

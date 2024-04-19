@@ -3,7 +3,7 @@ type opt 'v = #some v
             | #none
 
 module type dict = {
-    type k = i32
+    type k
     type~ dict 'v
 
     val size 'v : dict v -> i64
