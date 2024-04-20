@@ -1,5 +1,7 @@
-import "dict"
 import "../lib/github.com/diku-dk/sorts/merge_sort"
+import "helper"
+
+-- interval trees
 
 module type itree = {
     type interval
@@ -34,7 +36,7 @@ module itree1D : itree with interval = (f64, f64)
                 let c = t[i]
                 in if !(p == c.0) then
                     let dir = p < c.0
-                    -- 'h' below could probably be calculated with a loop instead, with less work (but a with a bigger span!)
+                    -- 'h' below could probably be calculated with a loop instead, with less work (but with a bigger span!)
                     -- (due to these being sorted by interval startpoint/endpoint)
                     -- with a map, you can actually avoid the whole sorting process and only keep track of single overlapping intervals
                     let (h,new_i) = if dir then ((map (\(j,_) -> if p > j then 1 else 0) c.2), c.1.0) 
@@ -45,8 +47,48 @@ module itree1D : itree with interval = (f64, f64)
                     (-1, acc + (length c.2))
             in cnt
     
+
     def many [n] (iv : [n]interval) : tree =
-        let fsize = f64.i64 n
+        let avg_intvls (x,y) =
+            (x/2.0) + (y/2.0)
+        let x_cent = reduce (+) 0.0 (map avg_intvls iv)
+        let shp = [n]
+        let res = []
+        let (_,_,res) = loop (iv:[n]interval,shp:[m]i64,res) while (length iv > 0) do
+            let fst_i = scanExcl (+) 0 shp
+            let begs  = scan (+) 0 shp
+            let flags = mkFlagArray shp 0i32 <| map (+1) <| map i32.i64 (iota m)
+            let II1 = sgmSumInt flags <| map (\f -> if f==0 then 0 else f-1) flags
+
+            -- again, a "qualified guess" may be be just as good as the actual average x_center
+            let avgs    = sgmScan (+) 0.0 flags <| map avg_intvls iv
+            let x_cents = map2 (\b s -> if s == 0 then 0 else avgs[b-1]/(f64.i64 s)) begs shp -- check in map, only if shp contains sizes of 0
+            -- I lost my brain around here
+            let scx     = sgmScan (+) 0.0 flags <| scatter (replicate 0.0 n) fst_i x_cents
+            
+            -- fix partition2L thank you oh lovely programmer
+            let conds1        = map2 (\center (_,y) -> y < center) scx iv
+            let (ps, (_,iv')) = partition2L conds1 0.0 (shp,iv)
+
+            -- also, could drop already sorted stuff from before, but eh its implied and right anyways
+            let conds2          = map2 (\center (x,_) -> x > center) scx iv'
+            let (ps', (_,iv'')) = partition2L conds1 0.0 (shp,iv')
+            
+            let spl = map2 (\x y -> x+y) ps ps'
+            let n'  = reduce (+) 0 spl
+
+            let shp' = intertwine ps ps'
+
+            -- jeg er syg i hovedet for det jeg laver nu
+            -- english: I'm crazy with it
+            let cook = intertwine shp (replicate -2 m)
+            let spl  = map2 (\p p' s -> [p',(s-(p+p'))]) p ps' shp |> flatten
+            let cflg = mkFlagArray spl 0i32 <| map (+1) <| map i32.i64 cook
+            let II1  = sgmSumInt flags <| map (\f -> if f==0 then 0 else f-1) flags
+
+            -- let new_n = reduce (+) 0 (map2 (\x y -> x+y) ps ps')
+            -- let iv''' = flat_scatter 
+            in (iv''',shp',res')
         
 
     -- def recursive_many [n] (iv : [n]interval) : tree =

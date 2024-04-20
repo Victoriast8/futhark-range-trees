@@ -1,4 +1,4 @@
-EXE = arraydict sorteddict interval_tree
+EXE = arraydict sorteddict
 TESTS = $(EXE:=_tests)
 COMP = $(EXE) $(TESTS)
 
