@@ -104,7 +104,7 @@ def intertwine [n] 't (as : [n]t) (bs : [n]t) : [n*2]t =
     map2 (\x y -> [x,y]) as bs |> flatten
 
 -- Was going to generalize this case, but making use of a segmented scan requires too many obscure parameters;
--- we should instead strive to create the flat implementation, for each type as the necessity arises
+-- we should instead strive to create the flat implementation for each type, as the necessity arises
 def flat_replicate_bools [n] (ns : [n]i64) (ms : [n]bool) : []bool =
     let inds = scanExcl (+) 0 ns
                |> map2 (\n i -> if n>0 then i else -1) ns
