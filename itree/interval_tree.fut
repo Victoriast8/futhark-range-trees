@@ -52,44 +52,51 @@ module itree1D : itree with interval = (f64, f64)
         let avg_intvls (x,y) =
             (x/2.0) + (y/2.0)
         let x_cent = reduce (+) 0.0 (map avg_intvls iv)
-        let shp = [n]
+        let shp = [(i32.i64 n)]
         let res = []
-        let (_,_,res) = loop (iv:[n]interval,shp:[m]i64,res) while (length iv > 0) do
-            let fst_i = scanExcl (+) 0 shp
+        let (_,_,res) = loop (iv,shp,res) while (length iv > 0) do
+            let fst_i = scanExcl (+) 0 shp |> map i64.i32
             let begs  = scan (+) 0 shp
-            let flags = mkFlagArray shp 0i32 <| map (+1) <| map i32.i64 (iota m)
-            let II1 = sgmSumInt flags <| map (\f -> if f==0 then 0 else f-1) flags
+            let flags = mkFlagArray shp 0i32 <| map (+1) <| map i32.i64 (iota (length shp))
+            --let II1 = sgmSumInt flags <| map (\f -> if f==0 then 0 else f-1) flags
 
             -- again, a "qualified guess" may be be just as good as the actual average x_center
+            -- ... it now dawns on me: What happens to x_cents, if there are only two non-overlapping intervals left in that segment?
+            -- actually, this won't be a problem. The problem will be subdivided once again, making an "empty" (no overlapping intervals) node
             let avgs    = sgmScan (+) 0.0 flags <| map avg_intvls iv
-            let x_cents = map2 (\b s -> if s == 0 then 0 else avgs[b-1]/(f64.i64 s)) begs shp -- check in map, only if shp contains sizes of 0
-            -- I lost my brain around here
-            let scx     = sgmScan (+) 0.0 flags <| scatter (replicate 0.0 n) fst_i x_cents
-            
-            -- fix partition2L thank you oh lovely programmer
-            let conds1        = map2 (\center (_,y) -> y < center) scx iv
-            let (ps, (_,iv')) = partition2L conds1 0.0 (shp,iv)
+            let x_cents = map2 (\b s -> if s == 0 then 0 else avgs[b-1]/(f64.i32 s)) begs shp -- check in map, only if shp contains sizes of 0
+            let scx     = sgmScan (+) 0.0 (flags :> [length iv]i32)
+                                    <| map f64.i64 
+                                    <| scatter (replicate (length iv) 0) fst_i (map i64.f64 x_cents)
+ 
+            -- please see "helper.fut" as to why two partitions are necessary
+            let conds1        = map2 (\center (_,y) -> y < center) scx (iv :> [length iv]interval)
+            let (ps, (_,iv')) = partition2L conds1 (0.0,0.0) ((shp :> [length shp]i32),(iv :> [length iv]interval))
 
-            -- also, could drop already sorted stuff from before, but eh its implied and right anyways
             let conds2          = map2 (\center (x,_) -> x > center) scx iv'
-            let (ps', (_,iv'')) = partition2L conds1 0.0 (shp,iv')
+            let (ps', (_,iv'')) = partition2L conds1 (0.0,0.0) (shp,iv')
             
-            let spl = map2 (\x y -> x+y) ps ps'
-            let n'  = reduce (+) 0 spl
+            let shp' = intertwine ps' ps
+            let ps'' = map2 (\x y -> x+y) ps ps'
 
-            let shp' = intertwine ps ps'
+            -- use partition, to partition split points
+            -- first build false/true
+            let (ns, ms)   = map2 (\p'' s -> [(p'',true),((s-p''),false)]) ps'' shp |> flatten |> unzip
+            let condsSpl   = flat_replicate_bools (map i64.i32 ns) ms
+            -- now we simply partition by the built boolean array
+            let (p1,p2)    = partition (\(_,cond) -> cond) (zip iv'' (condsSpl :> [length iv]bool))
+            let (iv''',rs) = ((unzip p1).0, (unzip p2).0)
 
-            -- jeg er syg i hovedet for det jeg laver nu
-            -- english: I'm crazy with it
-            let cook = intertwine shp (replicate -2 m)
-            let spl  = map2 (\p p' s -> [p',(s-(p+p'))]) p ps' shp |> flatten
-            let cflg = mkFlagArray spl 0i32 <| map (+1) <| map i32.i64 cook
-            let II1  = sgmSumInt flags <| map (\f -> if f==0 then 0 else f-1) flags
+            -- all that remains, is to put the "hit" intervals into res (the accumulated tree)
+            let rs_shp = map2 (\x y -> y-x) ps'' shp
 
-            -- let new_n = reduce (+) 0 (map2 (\x y -> x+y) ps ps')
-            -- let iv''' = flat_scatter 
+            -- NOTE: before I write this code, I know it won't be the right way to do it.
+            -- We make this now, to hopefully have something that works in practice
+            let srs  = scanExcl (+) 0 rs_shp
+            let res' = map3 (\p s r -> (p,(-1,-1),(rs[s:(s+r)]),(rs[s:(s+r)]))) x_cents srs rs_shp
+
             in (iv''',shp',res')
-        
+        in res
 
     -- def recursive_many [n] (iv : [n]interval) : tree =
     --     -- compute x_center

@@ -99,11 +99,16 @@ def partition2L 't [n] [m]
 
     in  (lst, (shp,fltarr))
 
--- Is this the correct way to intertwine arrays in Futhark? Only the compiler knows... And Troels forhåbentlig
-def intertwine [n] 't (a : [n]t) (b : [n]t) : [n*2]t =
-    map2 (\x y -> [x,y]) a b |> flatten
+-- Is this the correct way to intertwine arrays in Futhark? Only the compiler knows...
+def intertwine [n] 't (as : [n]t) (bs : [n]t) : [n*2]t =
+    map2 (\x y -> [x,y]) as bs |> flatten
 
--- flattened version of split
--- def flat_split [n] [m] [k] 't (shp : [m]i32) (splits : [m]i32) 
---                               (arr : [n]t  ) (II1    : [n]i32)
---                               : ([n-k]t, [k]t) =
+-- Was going to generalize this case, but making use of a segmented scan requires too many obscure parameters;
+-- we should instead strive to create the flat implementation, for each type as the necessity arises
+def flat_replicate_bools [n] (ns : [n]i64) (ms : [n]bool) : []bool =
+    let inds = scanExcl (+) 0 ns
+               |> map2 (\n i -> if n>0 then i else -1) ns
+    let size = (last inds) + (last ns)
+    let vals = scatter (replicate size false) inds ms
+    let flgs = scatter (replicate size 0) inds ns
+    in sgmScan (||) false (map i32.i64 flgs) vals
