@@ -48,7 +48,6 @@ module itree1D : itree = {
            case #some t ->
                 let (_,cnt) = loop (i,acc) = (0,0) while i >= 0 do
                     let c = t.0[i]
-                    let print = trace c
                     let (istart, ilen) = (c.1.0, c.1.1)
                     in if !(p == c.0) then
                         let dir = p < c.0
@@ -57,7 +56,6 @@ module itree1D : itree = {
                                    else (new_child_idx c.3,t.2,istart+ilen-1,(-1))
                         let (_,sum) = loop (e,iacc) = (ivs[start],0) 
                             while ilen > iacc && (if dir then p >= e.0 else p <= e.1) do
-                                let print2 = trace e
                                 let upd_i = iacc+1
                                 in (ivs[start+(upd_i*ldir)],upd_i)
                         in (new_i,(acc + sum))
