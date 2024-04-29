@@ -1,5 +1,9 @@
 -- helper functions
 
+-- intertwines two arrays - as = [1,2,3], bs = [4,5,6]; intertwine as bs = [1,4,2,5,3,6]
+def intertwine [n] 't (as : [n]t) (bs : [n]t) : [n*2]t =
+    map2 (\x y -> [x,y]) as bs |> flatten
+
 -- Typical exclusive scan
 def scanExcl [n] 't (op : t -> t -> t) (ne: t) (arr : [n]t) : [n]t =
     scan op ne <| map (\i -> if i > 0 then arr[i-1] else ne) (iota n)
@@ -12,7 +16,7 @@ def sgmScan [n] 't (op : t -> t -> t)
         scan (\(f1,x1) (f2,x2) -> 
             let f = f1 | f2 in
             if f2 > 0 then (f, x2)
-            else (f, op x1 x2)
+            else (f, x1 `op` x2)
         ) (0,ne) (zip flg arr)
     let (_, vals) = unzip flgs_vals
     in vals
@@ -46,13 +50,14 @@ def mkFlagArray 't [m]
                        ) aoa_shp shp_scn        --   [0,0,0,0,0,0,0,0,0,0]
     in scatter(replicate (i64.i32 aoa_len) zero)--   [-1,0,3,-1,4,8,-1]
             (map i64.i32 shp_ind) aoa_val     --   [1,1,1,1,1,1,1]
+    -- result: [1,0,0,1,1,0,0,0,1,0]
 
 -- note - this is my own DPP A3 assignment handin of flat_scatter + partition2L.
 -- The implementation *is* working. It should, however, probably be looked through once more.
-def flat_scatter [m] [n] [g] 't 
-                       (xs: [m]t) (is: [n]i32) (as: [n]t) 
-                       (xs_shp: [g]i32) (is_shp: [g]i32) 
-                       : [m]t =
+def flat_scatter 't [m] [n] [g]
+                    (xs: [m]t) (is: [n]i32) (as: [n]t) 
+                    (xs_shp: [g]i32) (is_shp: [g]i32) 
+                    : [m]t =
     let shpscan_i = scanExcl (+) 0 is_shp
     let x_incl = scan (+) 0 xs_shp
     let x_excl = scanExcl (+) 0 xs_shp
@@ -73,14 +78,13 @@ def flat_scatter [m] [n] [g] 't
         |> map i64.i32
     in scatter (copy xs) upd_i as
 
--- this is actually just a partitionL...
 -- to see the effects of a partition2L, either:
 -- 1. make a new function that doesn't impose partition2L, or
 -- 2. use partitionL two times in succession (true elements will appear first)
-def partition2L 't [n] [m]
-                (condsL: [n]bool) (dummy: t)
-                (shp: [m]i32, arr: [n]t) :
-                ([m]i32, ([m]i32, [n]t)) =
+def partitionL 't [n] [m]
+                  (condsL: [n]bool) (dummy: t)
+                  (shp: [m]i32, arr: [n]t) :
+                  ([m]i32, ([m]i32, [n]t)) =
     let begs   = scan (+) 0 shp
     let flags  = mkFlagArray shp 0i32 (map (+1) (map i32.i64 (iota m)))
     let outinds= sgmSumInt flags <| map (\f -> if f==0 then 0 else f-1) flags
@@ -99,9 +103,17 @@ def partition2L 't [n] [m]
 
     in  (lst, (shp,fltarr))
 
--- Is this the correct way to intertwine arrays in Futhark? Only the compiler knows...
-def intertwine [n] 't (as : [n]t) (bs : [n]t) : [n*2]t =
-    map2 (\x y -> [x,y]) as bs |> flatten
+-- It is important to note, that the two partitions happen on the same segment twice, without removing successes.
+-- In some cases, this won't be an issue, for instance when no element succeeding p1 can succeed p2 (e.g. p1='>' and p2='<')
+-- This may or may not be fixed, but for now the partition2L implementation works for what is needed,
+-- downprioritizing a refactor, which would probably take some time.
+def flat_res_partition2L 't [n] [m]
+                   (p1 : t -> bool) (p2 : t -> bool)
+                   (dummy : t) (shp : [m]i32, arr : [n]t)
+                   : (([m]i32,[m]i32), ([m]i32, [n]t)) =
+    let (split1, (_,ps))  = partitionL (map p1 arr) dummy (shp, arr)
+    let (split2, (_,ps')) = partitionL (map p2 ps) dummy (shp, ps)
+    in ((split1,split2),(shp,ps'))
 
 -- Was going to generalize this case, but making use of a segmented scan requires too many obscure parameters;
 -- we should instead strive to create the flat implementation for each type, as the necessity arises
