@@ -1,4 +1,4 @@
-EXE = interval_tree
+EXE = interval_tree helper
 TESTS = $(EXE:=_tests)
 COMP = $(EXE) $(TESTS)
 

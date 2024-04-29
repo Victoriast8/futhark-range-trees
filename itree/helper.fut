@@ -6,7 +6,7 @@ def intertwine [n] 't (as : [n]t) (bs : [n]t) : [n*2]t =
 
 -- Typical exclusive scan
 def scanExcl [n] 't (op : t -> t -> t) (ne: t) (arr : [n]t) : [n]t =
-    scan op ne <| map (\i -> if i > 0 then arr[i-1] else ne) (iota n)
+    scan op ne (map (\i -> if i > 0 then arr[i-1] else ne) (iota n))
 
 -- Typical (inclusive) segmented scan
 def sgmScan [n] 't (op : t -> t -> t) 
@@ -112,15 +112,17 @@ def flat_res_partition2L 't [n] [m]
                    (dummy : t) (shp : [m]i32, arr : [n]t)
                    : (([m]i32,[m]i32), ([m]i32, [n]t)) =
     let (split1, (_,ps))  = partitionL (map p1 arr) dummy (shp, arr)
-    let (split2, (_,ps')) = partitionL (map p2 ps) dummy (shp, ps)
+    let (split2, (_,ps')) = partitionL (map p2 ps)  dummy (shp, ps)
     in ((split1,split2),(shp,ps'))
 
 -- Was going to generalize this case, but making use of a segmented scan requires too many obscure parameters;
 -- we should instead strive to create the flat implementation for each type, as the necessity arises
+-- ALSO: never EVER use this function, unless 'ns' reduces to >=1i64.
+-- 'ns' is expected to be a shape array, so negative values are also discouraged, as this has unintended consequences
 def flat_replicate_bools [n] (ns : [n]i64) (ms : [n]bool) : []bool =
-    let inds = scanExcl (+) 0 ns
-               |> map2 (\n i -> if n>0 then i else -1) ns
-    let size = (last inds) + (last ns)
+    let scn = scanExcl (+) 0 ns
+    let inds = map2 (\n i -> if n>0 then i else -1) ns scn
+    let size = (last scn) + (last ns) -- DPP slides use '(last inds)'. This is wrong. Consider the last element of 'ns' is 0.
     let vals = scatter (replicate size false) inds ms
     let flgs = scatter (replicate size 0) inds ns
     in sgmScan (||) false (map i32.i64 flgs) vals
