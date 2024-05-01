@@ -6,13 +6,12 @@ import "helper"
 type opt 'v = #some v
             | #none
 type point = f64
-type interval = (f64,f64)
 type child = opt i64
-type left = child
-type right = child
-type node = (point,(i64,i64),left,right)
+type interval = (point,point)
+type node = {m: point, slice: (i64,i64), left: child, right: child}
 
-def create_node (p : point) (start : i64, len : i64) (l : left) (r : right) : node = (p,(start,len),l,r)
+def create_node (p : point) (start : i64, len : i64) (l : child) (r : child) : node =
+    {m = p, slice = (start,len), left = l, right = r}
 
 module type itree = {
     type~ treeIntervals
@@ -22,7 +21,6 @@ module type itree = {
     -- count må gerne være sekventiel - vi kan kalde den med maps: parallelismen ligger i many
     val count : point -> tree -> i64 -- skal tælle hvor mange intervaller indeholder et punkt
     val many [n] : [n]interval -> tree
-    val query : tree -> interval -> i64
     -- ...
 }
 -- start med at skrive en rekursiv many
@@ -33,7 +31,9 @@ module type itree = {
 module itree1D : itree = {
     type~ treeIntervals = []interval
     type~ treeNodes     = []node
-    type~ tree          = opt (treeNodes,treeIntervals,treeIntervals)
+    type~ tree          = {tNodes: treeNodes, 
+                           tStartSortedIntervals: treeIntervals,
+                           tEndSortedIntervals: treeIntervals}
 
     local def sort_by_key [n] 't 'k (key : t -> k) (dir : k -> k -> bool) (xs : [n]t) : [n]t =
         merge_sort_by_key key dir xs
@@ -43,26 +43,23 @@ module itree1D : itree = {
             match n
             case #some idx -> idx
             case #none     -> -1
-        in match t
-           case #none -> 0
-           case #some t ->
-                let (_,cnt) = loop (i,acc) = (0,0) while i >= 0 do
-                    let c = t.0[i]
-                    let (istart, ilen) = (c.1.0, c.1.1)
-                    in if !(p == c.0) then
-                        let dir = p < c.0
-                        let (new_i, ivs, start, ldir) = 
-                            if dir then (new_child_idx c.2,t.1,istart,1)
-                                   else (new_child_idx c.3,t.2,istart+ilen-1,(-1))
-                        let (_,sum) = loop (e,iacc) = (ivs[start],0) 
-                            while ilen > iacc && (if dir then p >= e.0 else p <= e.1) do
-                                let upd_i = iacc+1
-                                in (ivs[start+(upd_i*ldir)],upd_i)
-                        in (new_i,(acc + sum))
-                    else
-                        (-1, acc + ilen)
-                in cnt
-    
+        let (_,cnt) = loop (i,acc) = (0,0) while i >= 0 do
+            let current = t.tNodes[i]
+            let (istart, ilen) = (current.slice.0, current.slice.1)
+            in if !(p == current.m) then
+                let dir = p < current.m
+                let (new_i, ivs, start, ldir) = 
+                    if dir then (new_child_idx current.left, t.tStartSortedIntervals, istart, 1)
+                           else (new_child_idx current.right, t.tEndSortedIntervals, istart+ilen-1, (-1))
+                let (_,sum) = loop (e,iacc) = (ivs[start],0)
+                    while ilen > iacc && (if dir then p >= e.0 else p <= e.1) do
+                        let upd_i = iacc+1
+                        in (ivs[start+(upd_i*ldir)],upd_i)
+                in (new_i,(acc + sum))
+            else
+                (-1, acc + ilen)
+        in cnt
+
     def many [n] (iv : [n]interval) : tree =
         let sortedByStart = sort_by_key (.0) (f64.<=) iv
         let sortedByEnd   = sort_by_key (.1) (f64.<=) iv
@@ -96,6 +93,7 @@ module itree1D : itree = {
             let left_offsets = split2
             let cent_offsets = map2 (+) left_offsets split1
             let right_length = map2 (-) wrk_shp cent_offsets
+            -- around here, could do a check if any work is left next iteration
             let childL  = map accChilds split2
             let childR  = map accChilds right_length
             let nons    = scanExcl (+) 0 (map2 (+) childL childR)
@@ -110,17 +108,17 @@ module itree1D : itree = {
             let new_acc = acc ++ map3 (\p i (l,r) -> create_node p i l r) mid islice children
             
             -- generate work and shape for next iteration
-            let (ns,ms) = map3 (\l c r -> [(l,true),(c,false),(r,true)]) left_offsets split1 right_length
+            let (ns,ms) = map3 (\l current r -> [(l,true),(current,false),(r,true)]) left_offsets split1 right_length
                             |> flatten
                             |> unzip
             let wrk_bools = zip (pwrk :> [length wrk]interval) ((flat_replicate_bools (map i64.i32 ns) ms) :> [length wrk]bool)
             let (new_wrk,_) = unzip (filter (\(_,cond) -> cond) wrk_bools)
-            let (new_shp, new_offs) = zip (intertwine left_offsets right_length) 
+            let (new_shp, new_offs) = zip (intertwine left_offsets right_length)
                                           (intertwine init_offs    cent_offsets)
                                       |> filter (\i -> !(i.0 == 0)) |> unzip
             in (new_wrk, new_shp, new_acc, new_non, new_offs)
-        in #some (res,sortedByStart,sortedByEnd)
-    
-    def query (iv : interval) (t : tree) : i64 =
-        ???
+        in {tNodes = res,
+            tStartSortedIntervals = sortedByStart,
+            tEndSortedIntervals = sortedByEnd}
 }
+
