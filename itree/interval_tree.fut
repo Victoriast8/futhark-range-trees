@@ -18,15 +18,10 @@ module type itree = {
     type~ treeNodes
     type~ tree
 
-    -- count må gerne være sekventiel - vi kan kalde den med maps: parallelismen ligger i many
-    val count : point -> tree -> i64 -- skal tælle hvor mange intervaller indeholder et punkt
+    val count : point -> tree -> i64
     val many [n] : [n]interval -> tree
     -- ...
 }
--- start med at skrive en rekursiv many
--- derefter lav en futhark lad som om det er et rekusivt sprog
--- lav den rekursive om til en lifted/flad version
--- læs op intervaltræer igen
 
 module itree1D : itree = {
     type~ treeIntervals = []interval
@@ -43,40 +38,44 @@ module itree1D : itree = {
             match n
             case #some idx -> idx
             case #none     -> -1
+        -- loop traverses tree
         let (_,cnt) = loop (i,acc) = (0,0) while i >= 0 do
             let current = t.tNodes[i]
             let (istart, ilen) = (current.slice.0, current.slice.1)
-            in if !(p == current.m) then
-                let dir = p < current.m
-                let (new_i, ivs, start, ldir) = 
-                    if dir then (new_child_idx current.left, t.tStartSortedIntervals, istart, 1)
-                           else (new_child_idx current.right, t.tEndSortedIntervals, istart+ilen-1, (-1))
-                let (_,sum) = loop (e,iacc) = (ivs[start],0)
-                    while ilen > iacc && (if dir then p >= e.0 else p <= e.1) do
-                        let upd_i = iacc+1
-                        in (ivs[start+(upd_i*ldir)],upd_i)
-                in (new_i,(acc + sum))
-            else
-                (-1, acc + ilen)
+            let dir = p <= current.m
+            let (new_i, ivs, startidx, ldir) =
+                if dir then (new_child_idx current.left,
+                             t.tStartSortedIntervals, istart, 1)
+                       else (new_child_idx current.right,
+                             t.tEndSortedIntervals, istart+ilen-1, (-1))
+            in if ilen <= 0 then (new_i,acc) else
+                -- loop counts # of hit intervals
+                let (_,sum) = loop (idx,iacc) = (startidx,0)
+                    while ilen > iacc
+                        && (if idx >= 0 && idx < istart+ilen then
+                            p >= ivs[idx].0 && p <= ivs[idx].1
+                                else false) do
+                                    (idx+ldir,iacc+1)
+                --let t = trace sum
+                in (new_i,acc+sum)
         in cnt
 
     def many[n] (iv : [n]interval) : tree =
-        let sortedByStart = sort_by_key (.0) (f64.<=) iv
-        let sortedByEnd   = sort_by_key (.1) (f64.<=) iv
         let accChilds (i : i32) : i32 = if i <= 0 then 0 else 1
         -- parameters for loop:
         -- 1. work; dictates what data needs processing
         -- 2. shape of work; dictates the sizes of each subarray in 'work'
-        -- 3. accumulator; accumulates the resulting nodes
+        -- 3. accumulator; accumulates the resulting nodes and sorted intervals
         -- 4. number of nodes; simply a constant. Could be replaced with 'length acc' where 'non' is used
         -- 5. initial offsets; keeps track of each subarray's offset from previous iterations
-        let (_,_,res,_,_) = loop (wrk, wrk_shp,       acc, non, init_offs)
-                               = (iv,  [(i32.i64 n)], [],  0,   [0]      )
+        let (_,_,res,_,_) = loop (wrk, wrk_shp,       acc,         non, iv_off)
+                               = (iv,  [(i32.i64 n)], ([],[],[]),  0,   0     )
             while !(null wrk) do
             let begs  = scanExcl (+) 0 wrk_shp -- shp = [2,3,2] -> begs = [0,2,5], aka. start indexes
             let ends  = map2 (\b i -> b+i-1) begs wrk_shp -- marks the ends of each segement: ends = [1,4,6]
             --let ends  = scan (+) 0 wrk_shp |> map (+(-1)) -- same ends computation, but independent from 'begs' calculation
-            let [n] (flags: [n]i32) = mkFlagArray wrk_shp 0i32 (map (+1) (map i32.i64 (indices wrk_shp)))
+            let [n] (flags: [n]i32) = 
+                mkFlagArray wrk_shp 0i32 (map (+1) (map i32.i64 (indices wrk_shp)))
             let wrk = sized n wrk
 
             -- step 1. create mid values for partition
@@ -85,14 +84,8 @@ module itree1D : itree = {
             let max = sgmScan (\x y -> if x > y then x else y) 
                               f64.lowest  flags (map (.1) wrk)
             let mid = map (\i -> min[i] + 0.5 * (max[i] - min[i])) ends -- the "x_centers" of each segment, so to speak
-            
+
             -- step 2. do the partition
-            -- let scm = sgmScan (+) 0.0 flags (scatter (replicate size 0.0) (map i64.i32 begs) mid)
-            -- let ((split1,split2),(_,pwrk)) = flat_res_partition2L 
-            --                                     (\t -> t.1.1 >= t.0 && t.0 >= t.1.0)
-            --                                     (\t -> t.0 > t.1.1)
-            --                                     (0.0,(0.0,0.0)) (wrk_shp,(zip scm wrk))
-            
             let flg_scn = map (+(-1)) (sgmScan (+) 0 flags flags) -- in other words, the index of the segment
             let ((split1,split2),(_,pwrk)) = flat_res_partition2L
                     (\t -> t.1.1 >= mid[t.0] && mid[t.0] >= t.1.0)
@@ -100,11 +93,11 @@ module itree1D : itree = {
                     (0,(0.0,0.0)) (wrk_shp,(zip flg_scn wrk))
             let (_,pwrk) = unzip pwrk
 
-            -- step 3. create child predictions and calculate intervals for nodes
-            let left_offsets = split2
-            let cent_offsets = map2 (+) left_offsets split1
+            -- step 3. create child predictions, create interval slices and accumulate result
+            let left_length = split2
+            let cent_length = split1
+            let cent_offsets = map2 (+) left_length split1
             let right_length = map2 (-) wrk_shp cent_offsets
-            -- around here, could do a check if any work is left next iteration
             let childL  = map accChilds split2
             let childR  = map accChilds right_length
             let nons    = scanExcl (+) 0 (map2 (+) childL childR)
@@ -116,26 +109,38 @@ module itree1D : itree = {
                                 #some (i64.i32 (r + l + non + n)) else #none
                             in (left:child,right:child)
                           ) childL childR nons
-
-            let islice = map3 (\left len init -> ((i64.i32 (left + init)), i64.i32 len)
-                              ) left_offsets split1 init_offs
-            let new_acc = concat acc
-                (map3 (\p i (l,r) -> create_node p i l r) mid islice children)
             
             -- generate work and shape for next iteration
             let (ns,ms) = map3 (\l c r -> [(l,true),(c,false),(r,true)]) 
-                        left_offsets split1 right_length
+                        left_length cent_length right_length
                         |> flatten
                         |> unzip
-            let wrk_bools = zip 
-                (pwrk :> [length wrk]interval) 
-                ((flat_replicate_bools (map i64.i32 ns) ms) :> [length wrk]bool)
-            let (new_wrk,_) = unzip (filter (\(_,cond) -> cond) wrk_bools)
-            let (new_shp,new_offs) = zip (intertwine left_offsets right_length)
-                                         (intertwine init_offs    cent_offsets)
-                                      |> filter (\i -> !(i.0 == 0)) |> unzip
-            in (new_wrk, new_shp, new_acc, new_non, new_offs)
-        in {tNodes = res,
-            tStartSortedIntervals = sortedByStart,
-            tEndSortedIntervals = sortedByEnd}
+            let wrk_bools = zip
+                (pwrk :> [n]interval) 
+                ((flat_replicate_bools (map i64.i32 ns) ms) :> [n]bool)
+            let (tmp1,tmp2) = partition (\(_,cond) -> cond) wrk_bools
+            let (new_wrk,done) = ((unzip tmp1).0, (unzip tmp2).0)
+            --
+            let sbs_acc = sort_by_key (.0) (f64.<=) done -- sorted by start
+            let sbe_acc = sort_by_key (.1) (f64.<=) done -- sorted by end
+
+            let islice = map2 (\off len ->
+                                ((i64.i32 (off + iv_off)), i64.i32 len)
+                              ) (scanExcl (+) 0 cent_length) cent_length
+            let new_acc = 
+                (concat acc.0 
+                    (map3 (\p i (l,r) -> create_node p i l r) mid islice children),
+                 concat acc.1 sbs_acc,
+                 concat acc.2 sbe_acc)
+            let new_off = iv_off + (reduce (+) 0 cent_length)
+            --
+            let new_shp = intertwine left_length right_length
+                          |> filter (\i -> !(i == 0))
+            in (new_wrk, new_shp, new_acc, new_non, new_off)
+        in {tNodes = res.0,
+            tStartSortedIntervals = res.1,
+            tEndSortedIntervals = res.2}
 }
+
+def fix_random_intervals [n] (iv : [n]interval) : [n]interval =
+    map (\(f,s) -> if f < s then (f,s) else (s,f)) iv
