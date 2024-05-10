@@ -56,7 +56,6 @@ module itree1D : itree = {
                             p >= ivs[idx].0 && p <= ivs[idx].1
                                 else false) do
                                     (idx+ldir,iacc+1)
-                --let t = trace sum
                 in (new_i,acc+sum)
         in cnt
 
@@ -141,6 +140,3 @@ module itree1D : itree = {
             tStartSortedIntervals = res.1,
             tEndSortedIntervals = res.2}
 }
-
-def fix_random_intervals [n] (iv : [n]interval) : [n]interval =
-    map (\(f,s) -> if f < s then (f,s) else (s,f)) iv
