@@ -26,16 +26,18 @@ entry validate_itree1D_count [n] (iv1 : [n]f64) (iv2 : [n]f64) : bool =
 entry fix_intervals [n] (iv1 : [n]f64) (iv2 : [n]f64) : ([n]f64,[n]f64) =
     map2 (\f s -> if f < s then (f,s) else (s,f)) iv1 iv2 |> unzip
 
-type~ test_tree = itree1D.tree
-
-entry create_tree [n] (iv1 : [n]f64) (iv2 : [n]f64) : (test_tree,point) =
-    (itree1D.many (zip iv1 iv2), head iv1)
+entry create_tree [n] (iv1 : [n]f64) (iv2 : [n]f64) : (itree1D.tree) =
+    itree1D.many (zip iv1 iv2)
 
 -- ==
 -- entry: bench_itree1D_count
 -- script input { create_tree ($loaddata "data/16") }
-entry bench_itree1D_count (t : itree.tree, p : point) =
-    itree1D.count p t
+-- script input { create_tree ($loaddata "data/17") }
+-- script input { create_tree ($loaddata "data/18") }
+-- script input { create_tree ($loaddata "data/19") }
+-- script input { create_tree ($loaddata "data/20") }
+entry bench_itree1D_count (t : itree1D.tree) =
+    itree1D.count 0.5 t
 
 -- ==
 -- entry: bench_brute_count
@@ -45,4 +47,4 @@ entry bench_itree1D_count (t : itree.tree, p : point) =
 -- compiled input @data/19
 -- compiled input @data/20
 entry bench_brute_count [n] (iv1 : [n]f64) (iv2 : [n]f64) =
-    brute_count (zip iv1 iv2) (head iv1)
+    brute_count (zip iv1 iv2) 0.5

@@ -84,7 +84,7 @@ module itree1D : itree = {
                               f64.lowest  flags (map (.1) wrk)
             let mid = map (\i -> min[i] + 0.5 * (max[i] - min[i])) ends -- the "x_centers" of each segment, so to speak
 
-            -- step 2. do the partition
+            -- step 2. do the partition2L
             let flg_scn = map (+(-1)) (sgmScan (+) 0 flags flags) -- in other words, the index of the segment
             let ((split1,split2),(_,pwrk)) = flat_res_partition2L
                     (\t -> t.1.1 >= mid[t.0] && mid[t.0] >= t.1.0)
@@ -92,7 +92,7 @@ module itree1D : itree = {
                     (0,(0.0,0.0)) (wrk_shp,(zip flg_scn wrk))
             let (_,pwrk) = unzip pwrk
 
-            -- step 3. create child predictions, create interval slices and accumulate result
+            -- step 3. create child predictions
             let left_length = split2
             let cent_length = split1
             let cent_offsets = map2 (+) left_length split1
@@ -119,10 +119,12 @@ module itree1D : itree = {
                 ((flat_replicate_bools (map i64.i32 ns) ms) :> [n]bool)
             let (tmp1,tmp2) = partition (\(_,cond) -> cond) wrk_bools
             let (new_wrk,done) = ((unzip tmp1).0, (unzip tmp2).0)
-            --
+            let new_shp = intertwine left_length right_length
+                          |> filter (\i -> !(i == 0))
+
+            -- accumulate results
             let sbs_acc = sort_by_key (.0) (f64.<=) done -- sorted by start
             let sbe_acc = sort_by_key (.1) (f64.<=) done -- sorted by end
-
             let islice = map2 (\off len ->
                                 ((i64.i32 (off + iv_off)), i64.i32 len)
                               ) (scanExcl (+) 0 cent_length) cent_length
@@ -132,9 +134,7 @@ module itree1D : itree = {
                  concat acc.1 sbs_acc,
                  concat acc.2 sbe_acc)
             let new_off = iv_off + (reduce (+) 0 cent_length)
-            --
-            let new_shp = intertwine left_length right_length
-                          |> filter (\i -> !(i == 0))
+
             in (new_wrk, new_shp, new_acc, new_non, new_off)
         in {tNodes = res.0,
             tStartSortedIntervals = res.1,
