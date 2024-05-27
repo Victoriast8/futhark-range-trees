@@ -2,9 +2,11 @@ import "../lib/github.com/diku-dk/sorts/merge_sort"
 import "helper"
 
 -- interval trees
--- predefining some types. Makes the code more readable for onlookers
+-- the keyword 'Maybe' in Haskell
 type opt 'v = #some v
             | #none
+
+-- representing tree nodes with the following types
 type point = f64
 type child = opt i64
 type interval = (point,point)
@@ -20,7 +22,6 @@ module type itree = {
 
     val count : point -> tree -> i64
     val many [n] : [n]interval -> tree
-    -- ...
 }
 
 module itree1D : itree = {
@@ -65,14 +66,14 @@ module itree1D : itree = {
         -- 1. work; dictates what data needs processing
         -- 2. shape of work; dictates the sizes of each subarray in 'work'
         -- 3. accumulator; accumulates the resulting nodes and sorted intervals
-        -- 4. number of nodes; simply a constant. Could be replaced with 'length acc' where 'non' is used
+        -- 4. number of nodes; simply a constant. Could be replaced with 'length acc.0' where 'non' is used
         -- 5. initial offsets; keeps track of each subarray's offset from previous iterations
         let (_,_,res,_,_) = loop (wrk, wrk_shp,       acc,         non, iv_off)
                                = (iv,  [(i32.i64 n)], ([],[],[]),  0,   0     )
             while !(null wrk) do
-            let begs  = scanExcl (+) 0 wrk_shp -- shp = [2,3,2] -> begs = [0,2,5], aka. start indexes
-            let ends  = map2 (\b i -> b+i-1) begs wrk_shp -- marks the ends of each segement: ends = [1,4,6]
-            --let ends  = scan (+) 0 wrk_shp |> map (+(-1)) -- same ends computation, but independent from 'begs' calculation
+            -- let begs  = scanExcl (+) 0 wrk_shp -- shp = [2,3,2] -> begs = [0,2,5], aka. start indexes
+            -- let ends  = map2 (\b i -> b+i-1) begs wrk_shp -- marks the ends of each segement: ends = [1,4,6]
+            let ends  = scan (+) 0 wrk_shp |> map (+(-1)) -- same ends computation, but independent from 'begs' calculation
             let [n] (flags: [n]i32) = 
                 mkFlagArray wrk_shp 0i32 (map (+1) (map i32.i64 (indices wrk_shp)))
             let wrk = sized n wrk
@@ -115,7 +116,7 @@ module itree1D : itree = {
                         |> flatten
                         |> unzip
             let wrk_bools = zip
-                (pwrk :> [n]interval) 
+                (pwrk :> [n]interval)
                 ((flat_replicate_bools (map i64.i32 ns) ms) :> [n]bool)
             let (tmp1,tmp2) = partition (\(_,cond) -> cond) wrk_bools
             let (new_wrk,done) = ((unzip tmp1).0, (unzip tmp2).0)
@@ -135,6 +136,7 @@ module itree1D : itree = {
                  concat acc.2 sbe_acc)
             let new_off = iv_off + (reduce (+) 0 cent_length)
 
+            -- TODO: remove new_non and new_off to avoid calculations
             in (new_wrk, new_shp, new_acc, new_non, new_off)
         in {tNodes = res.0,
             tStartSortedIntervals = res.1,

@@ -1,7 +1,8 @@
-EXE = interval_tree helper
+EXE = interval_tree range_tree helper
 TESTS = $(EXE:=_tests)
 COMP = $(EXE) $(TESTS)
 DATA_DIR = data
+
 
 %: %.fut
 	futhark c $<
@@ -31,7 +32,9 @@ validate_1D_count: gen_intervals
 	cat data/20 | ./interval_tree_tests -e validate_itree1D_count
 
 bench_1D_count: gen_intervals
-	futhark bench interval_tree_tests.fut
+	futhark bench interval_tree_tests.fut --entry-point=create_tree
+	futhark bench interval_tree_tests.fut --entry-point=bench_itree1D_count
+	futhark bench interval_tree_tests.fut --entry-point=bench_brute_count
 	
 debug_1D_count:
 	futhark c interval_tree_tests.fut

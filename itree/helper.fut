@@ -32,7 +32,7 @@ def sgmSumInt [n] (flg : [n]i32) (arr : [n]i32) : [n]i32 =
     let (_, vals) = unzip flgs_vals
     in vals
 
--- Make a flag array: Given a shape and one value to insert as the flag.
+-- Makes a flag array: Given a shape and values to insert as the flag-value.
 def mkFlagArray 't [m] 
             (aoa_shp: [m]i32) (zero: t)       --aoa_shp=[0,3,1,0,4,2,0]
             (aoa_val: [m]t  ) : []t =         --aoa_val=[1,1,1,1,1,1,1]
@@ -110,7 +110,8 @@ def flat_res_partition2L 't [n] [m]
     let (split2, (_,ps')) = partitionL (map p2 ps)  dummy (shp, ps)
     in ((split1,split2),(shp,ps'))
 
--- Flat replicate of bools
+-- Flat/segmented replicate of bools. Never use this function, unless 'ns' reduces to >=1i64:
+-- ns - is a shape array. Convention: foreach segment: replicate ns[i] ms[i]
 def flat_replicate_bools [n] (ns : [n]i64) (ms : [n]bool) : []bool =
     let scn = scanExcl (+) 0 ns
     let inds = map2 (\n i -> if n>0 then i else -1) ns scn
@@ -118,3 +119,13 @@ def flat_replicate_bools [n] (ns : [n]i64) (ms : [n]bool) : []bool =
     let vals = scatter (replicate size false) inds ms
     let flgs = scatter (replicate size 0) inds ns
     in sgmScan (||) false (map i32.i64 flgs) vals
+
+-- Flat/segmented replicate for i32
+def flat_replicate_i32 [n] (ns : [n]i64) (ms : [n]i32) : []i32 =
+    let scn = scanExcl (+) 0 ns
+    let inds = map2 (\n i -> if n>0 then i else -1) ns scn
+    let size = (last scn) + (last ns)
+    let vals = scatter (replicate size 0) inds ms
+    let flgs = scatter (replicate size 0) inds ns
+    in sgmScan (+) 0 (map i32.i64 flgs) vals
+    
