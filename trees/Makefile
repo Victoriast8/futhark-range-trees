@@ -19,8 +19,8 @@ gen_intervals:
 	futhark dataset -g [524288]f64 -g [524288]f64 | ./interval_tree_tests -e fix_intervals > $(DATA_DIR)/19
 	futhark dataset -g [1048576]f64 -g [1048576]f64 | ./interval_tree_tests -e fix_intervals > $(DATA_DIR)/20
 
-# validation can be performed using 'make test_inerval_tree',
-# although to a slightly less convincing degree
+# |- validation can be performed using 'make test_interval_tree',
+#    although to a slightly less convincing degree
 validate_1D_count: gen_intervals
 	$(info )
 	$(info *** VALIDATION ***)
@@ -35,10 +35,6 @@ bench_1D_count: gen_intervals
 	futhark bench interval_tree_tests.fut --entry-point=create_tree
 	futhark bench interval_tree_tests.fut --entry-point=bench_itree1D_count
 	futhark bench interval_tree_tests.fut --entry-point=bench_brute_count
-	
-debug_1D_count:
-	futhark c interval_tree_tests.fut
-	futhark dataset -g [66536]f64 -g [66536]f64 | ./interval_tree_tests -e debug_itree1D_count
 
 clean:
 	rm -f $(COMP) *.c *.fut.*

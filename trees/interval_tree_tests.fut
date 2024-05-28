@@ -6,6 +6,11 @@ entry fix_intervals [n] (iv1 : [n]f64) (iv2 : [n]f64) : ([n]f64,[n]f64) =
 def brute_count [n] (p : point) (iv : [n]interval) : i64 =
     map (\(l,h) -> if p >= l && h >= p then 1 else 0) iv |> reduce (+) 0
 
+-- perhaps also compare to a loop, that uses binary search on sorted intervals?
+def loop_count [n] (p : point) (iv : [n]interval) : i64 =
+    loop acc = 0 for x in iv do
+        if p >= x.0 && p <= x.1 then acc + 1 else acc
+
 -- Validation testing
 
 -- validates itree1D.count (and indirectly itree1D.many), by comparing

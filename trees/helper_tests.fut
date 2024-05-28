@@ -1,4 +1,9 @@
 import "helper"
+-- |- This file serves the purpose of debugging helper functions.
+--    A function contained here, has posed a problem or has caused
+--    some doubt of correctness.
+--    Some functions *have not* been tested here.
+
 
 -- ==
 -- entry: test_intertwine
