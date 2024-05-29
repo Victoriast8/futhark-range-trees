@@ -16,7 +16,8 @@ module type range_tree = {
     type~ treePoints [d]
     type~ tree [d]
 
-    val query [d] : box [d] -> tree [d] -> i64 -- argueably should return the actual points
+    val count [d] : box [d] -> tree [d] -> i64 -- arguably should return the actual points
+    val query [d] : box [d] -> tree [d] -> []point [d] -- now return the actual points!
     val build [d] [n] : [n]point [d] -> tree [d]
 }
 
@@ -28,12 +29,100 @@ module k_range_tree : range_tree = {
     local def sort_by_key [n] 't 'k (key : t -> k) (dir : k -> k -> bool) (xs : [n]t) : [n]t =
         merge_sort_by_key key dir xs
 
-    -- | - a fully sequential, queue-based query.
-    --     A data-parallel query may be constructed, if time permits
-    def query [d] (bs : box [d]) (t : tree [d]) : i64 =
+    def query [d] (bs : box [d]) (t : tree [d]) : []point [d] =
         let in_box (b : box [d]) (p : point [d]) : bool =
             map3 (\lo hi p' -> lo <= p' && p' <= hi) b.0 b.1 p
-                |> reduce (&&) true
+                |> all (\t -> t)
+        let node_idx (n : child) : i64 =
+            match n
+            case #some idx -> idx
+            case #none     -> -1
+        let (_,_,_,res) =
+            loop (queue,typ,dim,acc) =
+                ([t.tNodes[0]],[0],[1],[])
+            while !(null queue) do
+
+            let (nd, tp, pd) = (head queue, head typ, head dim)
+            let ipd = pd - 1
+            let (nd' : treeNodes [d],tp',pd',acc') =
+
+                -- find v_split
+                if tp == 0 then
+                    let split = loop node = nd
+                        while !(node.m[ipd] >= bs.0[ipd]
+                             && node.m[ipd] <= bs.1[ipd])
+                             && node.left != #none do
+                            if node.m[ipd] > bs.0[ipd] then
+                                 t.tNodes[(node_idx node.left)]
+                            else t.tNodes[(node_idx node.right)]
+                    --let tt = trace split.m
+                    let is_leaf = split.left == #none
+                    let nn = if is_leaf then [] else
+                             [t.tNodes[(node_idx split.left)],
+                              t.tNodes[(node_idx split.right)]]
+                    --let tt = trace nn
+                    let (tp',pd') = if is_leaf then
+                                        ([],[])
+                                    else
+                                        ([1,2],[pd,pd])
+                    let acc' = if is_leaf && (in_box bs (split.m :> point [d]))
+                               then [split.m] else []
+                    in (nn :> treeNodes [d],tp',pd',acc')
+
+                -- do search and accumulation on left tree
+                else if tp == 1 then
+                    let (acc'',leaf,nodes) = loop (acc''',node,nn) = ([],nd,[])
+                        while node.left != #none do
+                            let dir = node.m[ipd] > bs.0[ipd]
+                            let rc = t.tNodes[(node_idx node.right)]
+                            let nacc = if pd == d && dir
+                                then t.tCanonical[rc.slice.0:rc.slice.0+rc.slice.1]
+                                else []
+                            let nn' = if pd < d && dir
+                                then [t.tNodes[(node_idx rc.subtree)]]
+                                else []
+                            let nd' = if dir then
+                                 t.tNodes[(node_idx node.left)]
+                            else rc
+                            in (acc'''++ nacc,nd',nn++nn')
+                    let acc'' = if (in_box bs (leaf.m :> point [d]))
+                                then acc''++([leaf.m] :> [1]point [d]) else acc''
+                    let (tp',pd') = map (\_ -> (0,pd+1)) nodes |> unzip
+                    in (nodes :> treeNodes [d],tp',pd',acc'')
+
+                -- do search and accumulation on right tree
+                else if tp == 2 then
+                    let (acc'',leaf,nodes) = loop (acc''',node,nn) = ([],nd,[])
+                        while node.left != #none do
+                            let dir = node.m[ipd] < bs.1[ipd]
+                            let lc = t.tNodes[(node_idx node.left)]
+                            let nacc = if pd == d && dir
+                                then t.tCanonical[lc.slice.0:lc.slice.0+lc.slice.1]
+                                else []
+                            let nn' = if pd < d && dir
+                                then [t.tNodes[(node_idx lc.subtree)]]
+                                else []
+                            let nd' = if dir then
+                                 t.tNodes[(node_idx node.right)]
+                            else lc
+                            in (acc'''++ nacc,nd',nn++nn')
+                    let acc'' = if (in_box bs (leaf.m :> point [d]))
+                                then acc''++([leaf.m] :> [1]point [d]) else acc''
+                    let (tp',pd') = map (\_ -> (0,pd+1)) nodes |> unzip
+                    in (nodes :> treeNodes [d],tp',pd',acc'')
+                else ([],[],[],[])
+            in ((drop 1 queue) ++ nd',
+                (drop 1 typ) ++ tp',
+                (drop 1 dim) ++ pd',
+                acc ++ (acc' :> []point [d]))
+        in res
+
+    -- | A fully sequential, queue-based query.
+    -- A data-parallel query may be constructed, if time permits
+    def count [d] (bs : box [d]) (t : tree [d]) : i64 =
+        let in_box (b : box [d]) (p : point [d]) : bool =
+            map3 (\lo hi p' -> lo <= p' && p' <= hi) b.0 b.1 p
+                |> all (\t -> t)
         let node_idx (n : child) : i64 =
             match n
             case #some idx -> idx
@@ -53,7 +142,7 @@ module k_range_tree : range_tree = {
                         while !(node.m[ipd] >= bs.0[ipd]
                              && node.m[ipd] <= bs.1[ipd])
                              && node.left != #none do
-                            if node.m[ipd] < bs.0[ipd] then
+                            if node.m[ipd] > bs.0[ipd] then
                                  t.tNodes[(node_idx node.left)]
                             else t.tNodes[(node_idx node.right)]
                     let is_leaf = split.left == #none
@@ -75,10 +164,9 @@ module k_range_tree : range_tree = {
                             let dir = node.m[ipd] > bs.0[ipd]
                             let rc = t.tNodes[(node_idx node.right)]
                             let nacc = if pd == d && dir 
-                                then node.slice.1
+                                then rc.slice.1
                                 else 0
                             let nn' = if pd < d && dir
-                                -- subtree may be a leaf - will cause an error
                                 then [t.tNodes[(node_idx rc.subtree)]]
                                 else []
                             let nd' = if dir then
@@ -97,7 +185,7 @@ module k_range_tree : range_tree = {
                             let dir = node.m[ipd] < bs.1[ipd]
                             let lc = t.tNodes[(node_idx node.left)]
                             let nacc = if pd == d && dir
-                                then node.slice.1
+                                then lc.slice.1
                                 else 0
                             let nn' = if pd < d && dir
                                 then [t.tNodes[(node_idx lc.subtree)]]
@@ -142,14 +230,20 @@ module k_range_tree : range_tree = {
                 zip3 wrk seg seg_dim
                 |> filter (\(_,_,dim) -> (i64.i32 dim) < d)
             
+            let (sub_shp,tmp) = zip wrk_shp wrk_dim
+                |> filter (\(_,dim) -> (i64.i32 dim) < d)
+                |> unzip
+            let sub_dim = map (+1) tmp
+
             -- a 'segmented sort,' if you will.
             -- we do a segmented sort by coordinate for subtrees
             -- this is the part where a bottom-up approach could do better
-            let sort_by_coord = sort_by_key (\e -> e.0[e.2]) (f64.<=) new_sub_wrk
-            let (sub_wrk,_,_) = 
-                sort_by_key (\e -> e.1) (i32.<=) sort_by_coord
+            let sort_by_coord = sort_by_key (\e -> e.0[e.2]) (f64.>=) new_sub_wrk -- also notice the FLIPPED operator.
+            let (sub_wrk,_,_) =                                                   -- Double sorting hella quirky. Don't do this at home, kids
+                --sort_by_key (\e -> e.1) (i32.<=) sort_by_coord
+                merge_sort_with_params_by_key {max_block_size = 1, max_merge_block_size = 1} (\e -> e.1) (i32.<=) sort_by_coord
                 |> unzip3
-            
+                        
             let non = length acc.0 + length wrk_shp
             let can_off = length acc.1
 
@@ -162,11 +256,6 @@ module k_range_tree : range_tree = {
                 |> map (\(s,i,d) -> [(i,d),(s-i,d)])
                 |> flatten
                 |> unzip
-            
-            let (sub_shp,tmp) = zip wrk_shp wrk_dim
-                |> filter (\(_,dim) -> (i64.i32 dim) < d)
-                |> unzip
-            let sub_dim = map (+1) tmp
 
             let points = map2 (\b m -> b+m-1) begs medians
             -- NOTE: These offsets may cause a problem. Keep an eye out here if validation fails

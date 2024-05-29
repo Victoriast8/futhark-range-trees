@@ -35,32 +35,30 @@ entry validate_itree1D_count [n] (iv1 : [n]f64) (iv2 : [n]f64) : bool =
 
 -- ==
 -- entry: create_tree
--- compiled input @data/16
--- compiled input @data/17
--- compiled input @data/18
--- compiled input @data/19
--- compiled input @data/20
+-- compiled input @data/i16
+-- compiled input @data/i17
+-- compiled input @data/i18
+-- compiled input @data/i19
+-- compiled input @data/i20
 entry create_tree [n] (iv1 : [n]f64) (iv2 : [n]f64) : itree1D.tree =
     itree1D.many (zip iv1 iv2)
 
 -- ==
 -- entry: bench_itree1D_count
--- script input { create_tree ($loaddata "data/16") }
--- script input { create_tree ($loaddata "data/17") }
--- script input { create_tree ($loaddata "data/18") }
--- script input { create_tree ($loaddata "data/19") }
--- script input { create_tree ($loaddata "data/20") }
+-- script input { create_tree ($loaddata "data/i16") }
+-- script input { create_tree ($loaddata "data/i17") }
+-- script input { create_tree ($loaddata "data/i18") }
+-- script input { create_tree ($loaddata "data/i19") }
+-- script input { create_tree ($loaddata "data/i20") }
 entry bench_itree1D_count (t : itree1D.tree) =
     itree1D.count 0.5 t
 
--- entry prep_ivs [n] (iv1 : [n]f64) (iv2 : [n]f64) : [n]interval = zip iv1 iv2
-
 -- ==
 -- entry: bench_brute_count
--- compiled input @data/16
--- compiled input @data/17
--- compiled input @data/18
--- compiled input @data/19
--- compiled input @data/20
+-- compiled input @data/i16
+-- compiled input @data/i17
+-- compiled input @data/i18
+-- compiled input @data/i19
+-- compiled input @data/i20
 entry bench_brute_count [n] (iv1 : [n]f64) (iv2 : [n]f64) =
     brute_count 0.5 (zip iv1 iv2)
