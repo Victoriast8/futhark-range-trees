@@ -1,4 +1,3 @@
-import "../lib/github.com/diku-dk/sorts/merge_sort"
 import "helper"
 
 -- interval trees
@@ -30,9 +29,6 @@ module itree1D : itree = {
     type~ tree          = {tNodes: treeNodes, 
                            tStartSortedIntervals: treeIntervals,
                            tEndSortedIntervals: treeIntervals}
-
-    local def sort_by_key [n] 't 'k (key : t -> k) (dir : k -> k -> bool) (xs : [n]t) : [n]t =
-        merge_sort_by_key key dir xs
 
     def count (p : point) (t : tree) : i64 =
         let new_child_idx (n : child) : i64 =

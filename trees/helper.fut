@@ -1,8 +1,12 @@
+import "../lib/github.com/diku-dk/sorts/merge_sort"
 -- helper functions
 
 -- intertwines two arrays - as = [1,2,3], bs = [4,5,6]; intertwine as bs = [1,4,2,5,3,6]
 def intertwine [n] 't (as : [n]t) (bs : [n]t) : [n*2]t =
     map2 (\x y -> [x,y]) as bs |> flatten
+
+def sort_by_key [n] 't 'k (key : t -> k) (dir : k -> k -> bool) (xs : [n]t) : [n]t =
+    merge_sort_by_key key dir xs
 
 -- Typical exclusive scan
 def scanExcl [n] 't (op : t -> t -> t) (ne: t) (arr : [n]t) : [n]t =

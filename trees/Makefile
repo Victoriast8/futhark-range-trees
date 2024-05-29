@@ -3,7 +3,6 @@ TESTS = $(EXE:=_tests)
 COMP = $(EXE) $(TESTS)
 DATA_DIR = data
 
-
 %: %.fut
 	futhark c $<
 
@@ -64,8 +63,13 @@ validate_2D_query: gen_points
 #	cat data/p19 | ./range_tree_tests -e validate_rtree2D_query
 #	cat data/p20 | ./range_tree_tests -e validate_rtree2D_query
 
-bench_2D_query: gen_points
+bench_range_tree: gen_points
 	futhark bench range_tree_tests.fut --entry-point=create_tree
+
+bench_range_query: gen_points
+	futhark bench range_tree_tests.fut --entry-point=bench_rtree2D_count
+	futhark bench range_tree_tests.fut --entry-point=bench_brute_query
+
 
 clean:
 	rm -f $(COMP) *.c *.fut.*

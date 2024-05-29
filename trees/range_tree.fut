@@ -1,4 +1,3 @@
-import "../lib/github.com/diku-dk/sorts/merge_sort"
 import "helper"
 
 type opt 'v = #some v
@@ -26,9 +25,8 @@ module k_range_tree : range_tree = {
     type~ treePoints [d]= []point [d]
     type~ tree [d]      = {tNodes : treeNodes [d], tCanonical : treePoints [d]}
 
-    local def sort_by_key [n] 't 'k (key : t -> k) (dir : k -> k -> bool) (xs : [n]t) : [n]t =
-        merge_sort_by_key key dir xs
-
+    -- | A fully sequential, queue-based query.
+    -- A data-parallel query may be constructed, if time permits
     def query [d] (bs : box [d]) (t : tree [d]) : []point [d] =
         let in_box (b : box [d]) (p : point [d]) : bool =
             map3 (\lo hi p' -> lo <= p' && p' <= hi) b.0 b.1 p
@@ -55,12 +53,10 @@ module k_range_tree : range_tree = {
                             if node.m[ipd] > bs.0[ipd] then
                                  t.tNodes[(node_idx node.left)]
                             else t.tNodes[(node_idx node.right)]
-                    --let tt = trace split.m
                     let is_leaf = split.left == #none
                     let nn = if is_leaf then [] else
                              [t.tNodes[(node_idx split.left)],
                               t.tNodes[(node_idx split.right)]]
-                    --let tt = trace nn
                     let (tp',pd') = if is_leaf then
                                         ([],[])
                                     else
@@ -117,8 +113,7 @@ module k_range_tree : range_tree = {
                 acc ++ (acc' :> []point [d]))
         in res
 
-    -- | A fully sequential, queue-based query.
-    -- A data-parallel query may be constructed, if time permits
+    -- | Same as 'query' but return number of hits instead of actual points
     def count [d] (bs : box [d]) (t : tree [d]) : i64 =
         let in_box (b : box [d]) (p : point [d]) : bool =
             map3 (\lo hi p' -> lo <= p' && p' <= hi) b.0 b.1 p
@@ -142,9 +137,11 @@ module k_range_tree : range_tree = {
                         while !(node.m[ipd] >= bs.0[ipd]
                              && node.m[ipd] <= bs.1[ipd])
                              && node.left != #none do
+
                             if node.m[ipd] > bs.0[ipd] then
                                  t.tNodes[(node_idx node.left)]
                             else t.tNodes[(node_idx node.right)]
+
                     let is_leaf = split.left == #none
                     let nn = if is_leaf then [] else
                              [t.tNodes[(node_idx split.left)],
@@ -161,6 +158,7 @@ module k_range_tree : range_tree = {
                 else if tp == 1 then
                     let (acc'',leaf,nodes) = loop (acc''',node,nn) = (0,nd,[])
                         while node.left != #none do
+
                             let dir = node.m[ipd] > bs.0[ipd]
                             let rc = t.tNodes[(node_idx node.right)]
                             let nacc = if pd == d && dir 
@@ -173,6 +171,7 @@ module k_range_tree : range_tree = {
                                  t.tNodes[(node_idx node.left)]
                             else rc
                             in (acc'''+ nacc,nd',nn++nn')
+
                     let acc'' = if (in_box bs (leaf.m :> point [d]))
                                 then acc''+1 else acc''
                     let (tp',pd') = map (\_ -> (0,pd+1)) nodes |> unzip
@@ -182,6 +181,7 @@ module k_range_tree : range_tree = {
                 else if tp == 2 then
                     let (acc'',leaf,nodes) = loop (acc''',node,nn) = (0,nd,[])
                         while node.left != #none do
+
                             let dir = node.m[ipd] < bs.1[ipd]
                             let lc = t.tNodes[(node_idx node.left)]
                             let nacc = if pd == d && dir
@@ -194,6 +194,7 @@ module k_range_tree : range_tree = {
                                  t.tNodes[(node_idx node.right)]
                             else lc
                             in (acc'''+ nacc,nd',nn++nn')
+
                     let acc'' = if (in_box bs (leaf.m :> point [d]))
                                 then acc''+1 else acc''
                     let (tp',pd') = map (\_ -> (0,pd+1)) nodes |> unzip
@@ -229,20 +230,15 @@ module k_range_tree : range_tree = {
             let new_sub_wrk =
                 zip3 wrk seg seg_dim
                 |> filter (\(_,_,dim) -> (i64.i32 dim) < d)
+            let (sub_wrk,_,_) = sort_by_key (\e -> e)
+                                (\x y -> if x.1 == y.1 then x.0[x.2] <= y.0[y.2]
+                                         else x.1 < y.1
+                                ) new_sub_wrk |> unzip3
             
             let (sub_shp,tmp) = zip wrk_shp wrk_dim
                 |> filter (\(_,dim) -> (i64.i32 dim) < d)
                 |> unzip
             let sub_dim = map (+1) tmp
-
-            -- a 'segmented sort,' if you will.
-            -- we do a segmented sort by coordinate for subtrees
-            -- this is the part where a bottom-up approach could do better
-            let sort_by_coord = sort_by_key (\e -> e.0[e.2]) (f64.>=) new_sub_wrk -- also notice the FLIPPED operator.
-            let (sub_wrk,_,_) =                                                   -- Double sorting hella quirky. Don't do this at home, kids
-                --sort_by_key (\e -> e.1) (i32.<=) sort_by_coord
-                merge_sort_with_params_by_key {max_block_size = 1, max_merge_block_size = 1} (\e -> e.1) (i32.<=) sort_by_coord
-                |> unzip3
                         
             let non = length acc.0 + length wrk_shp
             let can_off = length acc.1
