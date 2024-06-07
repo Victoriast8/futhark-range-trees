@@ -122,15 +122,16 @@ module itree1D : itree = {
             -- accumulate results
             let sbs_acc = sort_by_key (.0) (f64.<=) done -- sorted by start
             let sbe_acc = sort_by_key (.1) (f64.<=) done -- sorted by end
+            let cent_offsets = scanExcl (+) 0 cent_length
             let islice = map2 (\off len ->
                                 ((i64.i32 (off + iv_off)), i64.i32 len)
-                              ) (scanExcl (+) 0 cent_length) cent_length
+                              ) cent_offsets cent_length
             let new_acc = 
                 (concat acc.0 
                     (map3 (\p i (l,r) -> create_node p i l r) mid islice children),
                  concat acc.1 sbs_acc,
                  concat acc.2 sbe_acc)
-            let new_off = iv_off + (reduce (+) 0 cent_length)
+            let new_off = iv_off + (last cent_offsets) + (last cent_length)
 
             -- TODO: remove new_non and new_off to avoid calculations
             in (new_wrk, new_shp, new_acc, new_non, new_off)

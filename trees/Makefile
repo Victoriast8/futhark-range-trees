@@ -50,7 +50,7 @@ gen_points:
 #	futhark dataset -g [2]f64 -g [2]f64 -g [524288][2]f64 > $(DATA_DIR)/p19
 #	futhark dataset -g [2]f64 -g [2]f64 -g [1048576][2]f64 > $(DATA_DIR)/p20
 
-validate_2D_query: gen_points
+validate_KD_query: gen_points
 	$(info )
 	$(info *** VALIDATION ***)
 	$(info )
