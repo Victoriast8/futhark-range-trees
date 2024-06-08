@@ -3,7 +3,7 @@ import "range_tree"
 entry fix_box [d] (b1 : point [d]) (b2 : point [d]) : (point [d], point [d]) =
     map2 (\f s -> if f <= s then (f,s) else (s,f)) b1 b2 |> unzip
 
-entry brute_query [n][d] (b : box [d]) (ps : [n]point [d]) : i64 =
+def brute_query [n][d] (b : box [d]) (ps : [n]point [d]) : i64 =
     map (\p -> 
             if (map3 (\p lo hi ->
                 p >= lo && p <= hi
@@ -11,7 +11,7 @@ entry brute_query [n][d] (b : box [d]) (ps : [n]point [d]) : i64 =
             |> all (\t -> t)) then 1 else 0
         ) ps |> reduce (+) 0
 
-entry loop_query [n][d] (b : box [d]) (ps : [n]point [d]) : i64 =
+def loop_query [n][d] (b : box [d]) (ps : [n]point [d]) : i64 =
     loop acc = 0 for x in ps do
         if (loop alld = true for i in 0...d-1 do
             if x[i] >= b.0[i] && x[i] <= b.1[i] then alld && true else false)

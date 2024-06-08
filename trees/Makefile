@@ -46,9 +46,9 @@ gen_points:
 	futhark dataset -g [1024][2]f64 > $(DATA_DIR)/p2_10
 	futhark dataset -g [1024][3]f64 > $(DATA_DIR)/p3_10
 	futhark dataset -g [1024][4]f64 > $(DATA_DIR)/p4_10
-#	futhark dataset -g [2]f64 -g [2]f64 -g [262144][2]f64 > $(DATA_DIR)/p18
-#	futhark dataset -g [2]f64 -g [2]f64 -g [524288][2]f64 > $(DATA_DIR)/p19
-#	futhark dataset -g [2]f64 -g [2]f64 -g [1048576][2]f64 > $(DATA_DIR)/p20
+	futhark dataset -g [2]f64 -g [2]f64 -g [262144][2]f64 > $(DATA_DIR)/p2_18
+	futhark dataset -g [2]f64 -g [2]f64 -g [524288][2]f64 > $(DATA_DIR)/p2_19
+	futhark dataset -g [2]f64 -g [2]f64 -g [1048576][2]f64 > $(DATA_DIR)/p2_20
 
 validate_KD_query: gen_points
 	$(info )
@@ -59,9 +59,6 @@ validate_KD_query: gen_points
 	{ cat data/pb2 & cat data/p2_10; } | ./range_tree_tests -e validate_rtree2D_query
 	{ cat data/pb3 & cat data/p3_10; } | ./range_tree_tests -e validate_rtree2D_query
 	{ cat data/pb4 & cat data/p4_10; } | ./range_tree_tests -e validate_rtree2D_query
-#	cat data/p18 | ./range_tree_tests -e validate_rtree2D_query
-#	cat data/p19 | ./range_tree_tests -e validate_rtree2D_query
-#	cat data/p20 | ./range_tree_tests -e validate_rtree2D_query
 
 bench_range_tree: gen_points
 	futhark bench range_tree_tests.fut --entry-point=create_tree
