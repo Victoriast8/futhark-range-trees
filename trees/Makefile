@@ -43,16 +43,10 @@ gen_points:
 	futhark dataset -g [4]f64 -g [4]f64 | ./range_tree_tests -e fix_box > $(DATA_DIR)/pb4
 	futhark dataset -g [66536][2]f64 > $(DATA_DIR)/p2_16
 	futhark dataset -g [131072][2]f64 > $(DATA_DIR)/p2_17
+	futhark dataset -g [262144][2]f64 > $(DATA_DIR)/p2_18
 	futhark dataset -g [1024][2]f64 > $(DATA_DIR)/p2_10
 	futhark dataset -g [1024][3]f64 > $(DATA_DIR)/p3_10
 	futhark dataset -g [1024][4]f64 > $(DATA_DIR)/p4_10
-	futhark dataset -g [1024][8]f64 > $(DATA_DIR)/p8_10
-	futhark dataset -g [1024][16]f64 > $(DATA_DIR)/p16_10
-	futhark dataset -g [2]f64 -g [2]f64 -g [262144][2]f64 > $(DATA_DIR)/p2_18
-	futhark dataset -g [2]f64 -g [2]f64 -g [524288][2]f64 > $(DATA_DIR)/p2_19
-	futhark dataset -g [2]f64 -g [2]f64 -g [1048576][2]f64 > $(DATA_DIR)/p2_20
-	futhark dataset -g [2]f64 -g [2]f64 -g [2097152][2]f64 > $(DATA_DIR)/p2_21
-	futhark dataset -g [2]f64 -g [2]f64 -g [4194304][2]f64 > $(DATA_DIR)/p2_22
 
 validate_KD_query: gen_points
 	$(info )
