@@ -31,9 +31,9 @@ validate_1D_count: gen_intervals
 	cat data/i20 | ./interval_tree_tests -e validate_itree1D_count
 
 bench_1D_count: gen_intervals
-	futhark bench interval_tree_tests.fut --entry-point=create_tree
-	futhark bench interval_tree_tests.fut --entry-point=bench_itree1D_count
-	futhark bench interval_tree_tests.fut --entry-point=bench_brute_count
+	futhark bench interval_tree_tests.fut --backend=c
+	futhark bench interval_tree_tests.fut --backend=multicore
+#	futhark bench interval_tree_tests.fut --backend=cuda
 
 gen_points:
 	futhark c range_tree_tests.fut
@@ -46,9 +46,13 @@ gen_points:
 	futhark dataset -g [1024][2]f64 > $(DATA_DIR)/p2_10
 	futhark dataset -g [1024][3]f64 > $(DATA_DIR)/p3_10
 	futhark dataset -g [1024][4]f64 > $(DATA_DIR)/p4_10
+	futhark dataset -g [1024][8]f64 > $(DATA_DIR)/p8_10
+	futhark dataset -g [1024][16]f64 > $(DATA_DIR)/p16_10
 	futhark dataset -g [2]f64 -g [2]f64 -g [262144][2]f64 > $(DATA_DIR)/p2_18
 	futhark dataset -g [2]f64 -g [2]f64 -g [524288][2]f64 > $(DATA_DIR)/p2_19
 	futhark dataset -g [2]f64 -g [2]f64 -g [1048576][2]f64 > $(DATA_DIR)/p2_20
+	futhark dataset -g [2]f64 -g [2]f64 -g [2097152][2]f64 > $(DATA_DIR)/p2_21
+	futhark dataset -g [2]f64 -g [2]f64 -g [4194304][2]f64 > $(DATA_DIR)/p2_22
 
 validate_KD_query: gen_points
 	$(info )
@@ -61,11 +65,9 @@ validate_KD_query: gen_points
 	{ cat data/pb4 & cat data/p4_10; } | ./range_tree_tests -e validate_rtree2D_query
 
 bench_range_tree: gen_points
-	futhark bench range_tree_tests.fut --entry-point=create_tree
-
-bench_range_query: gen_points
-	futhark bench range_tree_tests.fut --entry-point=bench_rtree2D_count
-	futhark bench range_tree_tests.fut --entry-point=bench_brute_query
+	futhark bench range_tree_tests.fut --backend=c
+	futhark bench range_tree_tests.fut --backend=multicore
+	futhark bench range_tree_tests.fut --backend=cuda
 
 
 clean:

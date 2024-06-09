@@ -37,9 +37,16 @@ entry validate_rtree2D_query [n][d] (b1 : point [d]) (b2 : point [d]) (ps : [n]p
 -- entry: create_tree
 -- compiled input @data/p2_16
 -- compiled input @data/p2_17
+-- compiled input @data/p2_18
+-- compiled input @data/p2_19
+-- compiled input @data/p2_20
+-- compiled input @data/p2_21
+-- compiled input @data/p2_22
 -- compiled input @data/p2_10
 -- compiled input @data/p3_10
 -- compiled input @data/p4_10
+-- compiled input @data/p8_10
+-- compiled input @data/p16_10
 entry create_tree [n][d] (ps : [n]point [d]) : k_range_tree.tree [d] =
     k_range_tree.build ps
 
@@ -48,6 +55,16 @@ entry create_tree [n][d] (ps : [n]point [d]) : k_range_tree.tree [d] =
 -- entry: bench_rtree2D_count
 -- script input { create_tree ($loaddata "data/p2_16") }
 -- script input { create_tree ($loaddata "data/p2_17") }
+-- script input { create_tree ($loaddata "data/p2_18") }
+-- script input { create_tree ($loaddata "data/p2_19") }
+-- script input { create_tree ($loaddata "data/p2_20") }
+-- script input { create_tree ($loaddata "data/p2_21") }
+-- script input { create_tree ($loaddata "data/p2_22") }
+-- script input { create_tree ($loaddata "data/p2_10") }
+-- script input { create_tree ($loaddata "data/p3_10") }
+-- script input { create_tree ($loaddata "data/p4_10") }
+-- script input { create_tree ($loaddata "data/p8_10") }
+-- script input { create_tree ($loaddata "data/p16_10") }
 entry bench_rtree2D_count [d] (t : k_range_tree.tree [d]) =
     let point = iota d |> map f64.i64
     in k_range_tree.count (point, (map (+1f64) point)) t
@@ -56,6 +73,15 @@ entry bench_rtree2D_count [d] (t : k_range_tree.tree [d]) =
 -- entry: bench_brute_query
 -- compiled input @data/p2_16
 -- compiled input @data/p2_17
+-- compiled input @data/p2_18
+-- compiled input @data/p2_19
+-- compiled input @data/p2_20
+-- compiled input @data/p2_21
+-- compiled input @data/p2_22
+-- compiled input @data/p3_10
+-- compiled input @data/p4_10
+-- compiled input @data/p8_10
+-- compiled input @data/p16_10
 entry bench_brute_query [n][d] (ps : [n]point [d]) =
     let point = iota d |> map f64.i64
     in loop_query (point, (map (+1f64) point)) ps
