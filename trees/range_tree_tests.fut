@@ -47,24 +47,30 @@ entry create_tree [n][d] (ps : [n]point [d]) : k_range_tree.tree [d] =
 
 -- ==
 -- entry: bench_rtree2D_count
+-- script input { create_tree ($loaddata "data/p2_10") }
+-- script input { create_tree ($loaddata "data/p2_11") }
+-- script input { create_tree ($loaddata "data/p2_12") }
+-- script input { create_tree ($loaddata "data/p2_13") }
+-- script input { create_tree ($loaddata "data/p2_14") }
+-- script input { create_tree ($loaddata "data/p2_15") }
 -- script input { create_tree ($loaddata "data/p2_16") }
 -- script input { create_tree ($loaddata "data/p2_17") }
 -- script input { create_tree ($loaddata "data/p2_18") }
--- script input { create_tree ($loaddata "data/p2_10") }
--- script input { create_tree ($loaddata "data/p3_10") }
--- script input { create_tree ($loaddata "data/p4_10") }
 entry bench_rtree2D_count [d] (t : k_range_tree.tree [d]) =
     let point = iota d |> map f64.i64
     in k_range_tree.count (point, (map (+1f64) point)) t
 
 -- ==
 -- entry: bench_brute_query
+-- compiled input @data/p2_10
+-- compiled input @data/p2_11
+-- compiled input @data/p2_12
+-- compiled input @data/p2_13
+-- compiled input @data/p2_14
+-- compiled input @data/p2_15
 -- compiled input @data/p2_16
 -- compiled input @data/p2_17
 -- compiled input @data/p2_18
--- compiled input @data/p2_10
--- compiled input @data/p3_10
--- compiled input @data/p4_10
 entry bench_brute_query [n][d] (ps : [n]point [d]) =
     let point = iota d |> map f64.i64
     in loop_query (point, (map (+1f64) point)) ps
