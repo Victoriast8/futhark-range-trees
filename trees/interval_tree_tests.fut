@@ -45,6 +45,12 @@ entry create_tree [n] (iv1 : [n]f64) (iv2 : [n]f64) : itree1D.tree =
 
 -- ==
 -- entry: bench_itree1D_count
+-- script input { create_tree ($loaddata "data/i10") }
+-- script input { create_tree ($loaddata "data/i11") }
+-- script input { create_tree ($loaddata "data/i12") }
+-- script input { create_tree ($loaddata "data/i13") }
+-- script input { create_tree ($loaddata "data/i14") }
+-- script input { create_tree ($loaddata "data/i15") }
 -- script input { create_tree ($loaddata "data/i16") }
 -- script input { create_tree ($loaddata "data/i17") }
 -- script input { create_tree ($loaddata "data/i18") }
@@ -55,6 +61,12 @@ entry bench_itree1D_count (t : itree1D.tree) =
 
 -- ==
 -- entry: bench_brute_count
+-- compiled input @data/i10
+-- compiled input @data/i11
+-- compiled input @data/i12
+-- compiled input @data/i13
+-- compiled input @data/i14
+-- compiled input @data/i15
 -- compiled input @data/i16
 -- compiled input @data/i17
 -- compiled input @data/i18
