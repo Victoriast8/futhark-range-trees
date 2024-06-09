@@ -60,8 +60,8 @@ validate_KD_query: gen_points
 
 bench_range_tree: gen_points
 	futhark bench range_tree_tests.fut --backend=c
-	futhark bench range_tree_tests.fut --backend=multicore
-	futhark bench range_tree_tests.fut --backend=cuda
+	futhark bench range_tree_tests.fut --entry-point=create_tree --backend=multicore
+	futhark bench range_tree_tests.fut --entry-point=create_tree --backend=cuda
 
 
 clean:

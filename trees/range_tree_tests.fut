@@ -62,6 +62,7 @@ entry bench_rtree2D_count [d] (t : k_range_tree.tree [d]) =
 -- compiled input @data/p2_16
 -- compiled input @data/p2_17
 -- compiled input @data/p2_18
+-- compiled input @data/p2_10
 -- compiled input @data/p3_10
 -- compiled input @data/p4_10
 entry bench_brute_query [n][d] (ps : [n]point [d]) =
