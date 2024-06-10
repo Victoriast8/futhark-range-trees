@@ -12,12 +12,12 @@ test_%: %_tests.fut
 gen_intervals:
 	futhark c interval_tree_tests.fut
 	mkdir -p $(DATA_DIR)
-	futhark dataset -g [1024]f64 -g [66536]f64 | ./interval_tree_tests -e fix_intervals > $(DATA_DIR)/i10
-	futhark dataset -g [2048]f64 -g [66536]f64 | ./interval_tree_tests -e fix_intervals > $(DATA_DIR)/i11
-	futhark dataset -g [4096]f64 -g [131072]f64 | ./interval_tree_tests -e fix_intervals > $(DATA_DIR)/i12
-	futhark dataset -g [8292]f64 -g [262144]f64 | ./interval_tree_tests -e fix_intervals > $(DATA_DIR)/i13
-	futhark dataset -g [16384]f64 -g [524288]f64 | ./interval_tree_tests -e fix_intervals > $(DATA_DIR)/i14
-	futhark dataset -g [32786]f64 -g [1048576]f64 | ./interval_tree_tests -e fix_intervals > $(DATA_DIR)/i15
+	futhark dataset -g [1024]f64 -g [1024]f64 | ./interval_tree_tests -e fix_intervals > $(DATA_DIR)/i10
+	futhark dataset -g [2048]f64 -g [2048]f64 | ./interval_tree_tests -e fix_intervals > $(DATA_DIR)/i11
+	futhark dataset -g [4096]f64 -g [4096]f64 | ./interval_tree_tests -e fix_intervals > $(DATA_DIR)/i12
+	futhark dataset -g [8292]f64 -g [8292]f64 | ./interval_tree_tests -e fix_intervals > $(DATA_DIR)/i13
+	futhark dataset -g [16384]f64 -g [16384]f64 | ./interval_tree_tests -e fix_intervals > $(DATA_DIR)/i14
+	futhark dataset -g [32786]f64 -g [32786]f64 | ./interval_tree_tests -e fix_intervals > $(DATA_DIR)/i15
 	futhark dataset -g [66536]f64 -g [66536]f64 | ./interval_tree_tests -e fix_intervals > $(DATA_DIR)/i16
 	futhark dataset -g [131072]f64 -g [131072]f64 | ./interval_tree_tests -e fix_intervals > $(DATA_DIR)/i17
 	futhark dataset -g [262144]f64 -g [262144]f64 | ./interval_tree_tests -e fix_intervals > $(DATA_DIR)/i18
