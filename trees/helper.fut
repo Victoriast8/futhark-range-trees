@@ -105,7 +105,7 @@ def partitionL 't [n] [m]
 
     in  (lst, (shp,fltarr))
 
--- Lifted partition2. There are some shortcomings, namely the repeated partition on an aldready partitioned segment
+-- Lifted partition2. There are some shortcomings, namely the repeated partition on an already partitioned segment
 def flat_res_partition2L 't [n] [m]
                    (p1 : t -> bool) (p2 : t -> bool)
                    (dummy : t) (shp : [m]i32, arr : [n]t)

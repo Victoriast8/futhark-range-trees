@@ -1,3 +1,6 @@
+-- The original range tree implementation.
+-- Except for comments, this file lies untouched from the  bachelor project.
+-- For an improvement, see the improved range tree implementation in (hopefully) this directory.
 import "helper"
 
 type opt 'v = #some v
